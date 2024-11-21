@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .black-ui {
+            background-color: #212121;
+            color: #e0e0e0;
+        }
+
+        .black-ui .bg-sender {
+            background-color: #888888;
+            color: #ffffff;
+        }
+
+        .black-ui .bg-receiver {
+            background-color: #00a651;
+            color: #ffffff;
+        }
+
+        .white-ui {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        .white-ui .bg-sender {
+            background-color: #888888;
+            color: #ffffff;
+        }
+
+        .white-ui .bg-receiver {
+            background-color: #00a651;
+            color: #ffffff;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #007bff;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .toggle-button {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-button.black-ui {
+            background-color: #414141e3;
+            color: #ffffff;
+        }
+
+        .typing-indicator {
+            font-style: italic;
+            color: #888;
+            margin-bottom: 10px;
+            height: 1.5rem;
+            display: flex;
+            align-items: center;
+            visibility: hidden;
+        }
+
+        .content {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            margin-top: 4rem;
+            overflow: hidden;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+            text-align: left;
+        }
+
+        .message-input {
+            background-color: #f1f1f1;
+            padding: 1rem;
+            border-top: 1px solid #ddd;
+        }
+
+        .message {
+            max-width: 75%;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            text-align: left;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        .bg-sender {
+            background-color: #14ffff;
+            color: #ffffff;
+            align-self: flex-end;
+            position: relative;
+        }
+
+        .bg-receiver {
+            background-color: #00a651;
+            color: #ffffff;
+            align-self: flex-start;
+            position: relative;
+        }
+
+        .delete-button {
+            cursor: pointer;
+            margin-left: 0.5rem;
+            color: #f00;
+            font-size: 1rem;
+            display: none;
+            position: absolute;
+            right: 0.5rem;
+            top: 0.5rem;
+        }
+
+        .message:hover .delete-button {
+            display: inline;
+        }
+
+        .typing-indicator {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            font-style: italic;
+            color: #888;
+            text-align: center;
+            height: 1.5rem;
+            visibility: hidden;
+            transition: visibility 0.3s ease;
+        }
+
+        /* Modal styles */
+        #confirmModal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+            visibility: hidden;
+        }
+
+        #confirmModal.show {
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body class="white-ui" data-scroll-container>
+    <div class="navbar">
+        <div class="text-xl font-bold">Chat Room</div>
+        <button id="toggleButton" class="toggle-button">
+            <i class="fas fa-sun"></i>
+        </button>
+    </div>
+    <div class="content" data-scroll-container>
+        <div class="messages-container" id="messagesContainer">
+            <div class="flex flex-col space-y-4" id="messages">
+                <% messages.forEach(function(message) { %>
+                    <div class="flex <% if(message.sender === currentUser) { %> justify-end <% } else { %> justify-start <% } %>">
+                        <div class="message <% if(message.sender === currentUser) { %> bg-sender <% } else { %> bg-receiver <% } %>">
+                            <strong><%= message.sender %>: </strong><%= message.text %>
+                            <span class="delete-button" data-id="<%= message._id %>">❌</span>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+        <div id="typingIndicator" class="typing-indicator">
+            <span id="typingUser"></span> is typing...
+        </div>
+        <div class="message-input">
+            <form id="messageForm" class="flex">
+                <input type="text" id="messageInput" placeholder="Type your message..."
+                    class="flex-grow p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit"
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-lg focus:outline-none">
+                    Send
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal-content">
+        <h2 class="text-lg font-bold mb-4">Confirm Deletion</h2>
+        <p>Are you sure you want to delete this message?</p>
+        <div class="mt-4 flex justify-end">
+            <button id="confirmDelete" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700">Delete</button>
+            <button id="cancelDelete" class="ml-2 bg-gray-300 text-black px-4 py-2 rounded-lg hover:bg-gray-500">Cancel</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleButton = document.getElementById('toggleButton');
+            const typingIndicator = document.getElementById('typingIndicator');
+            const typingUser = document.getElementById('typingUser');
+            const messageInput = document.getElementById('messageInput');
+            const messagesContainer = document.getElementById('messagesContainer');
+            const confirmModal = document.getElementById('confirmModal');
+            const confirmDeleteButton = document.getElementById('confirmDelete');
+            const cancelDeleteButton = document.getElementById('cancelDelete');
+            let messageToDelete = null;
+            let isBlackUI = false;
+            let typingTimeout;
+
+            // Toggle UI mode
+            toggleButton.addEventListener('click', () => {
+                if (isBlackUI) {
+                    document.body.classList.remove('black-ui');
+                    document.body.classList.add('white-ui');
+                    toggleButton.classList.remove('black-ui');
+                    toggleButton.innerHTML = '<i class="fas fa-sun"></i>';
+                } else {
+                    document.body.classList.remove('white-ui');
+                    document.body.classList.add('black-ui');
+                    toggleButton.classList.add('black-ui');
+                    toggleButton.innerHTML = '<i class="fas fa-moon"></i>';
+                }
+                isBlackUI = !isBlackUI;
+            });
+
+            const socket = io();
+
+            const messageForm = document.getElementById('messageForm');
+
+            // Handle new message form submission
+            messageForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const message = messageInput.value.trim();
+                if (message) {
+                    socket.emit('newMessage', {
+                        sender: '<%= currentUser %>',
+                        text: message
+                    });
+                    messageInput.value = '';
+                    socket.emit('stopTyping');
+                }
+            });
+
+            // Emit typing event
+            messageInput.addEventListener('input', () => {
+                socket.emit('typing', '<%= currentUser %>');
+            });
+
+            // Handle incoming messages
+            socket.on('messageBroadcast', (data) => {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('flex', data.sender === '<%= currentUser %>' ? 'justify-end' : 'justify-start');
+                messageElement.innerHTML = `
+                    <div class="message ${data.sender === '<%= currentUser %>' ? 'bg-sender' : 'bg-receiver'}">
+                        <strong>${data.sender}: </strong>${data.text}
+                        <span class="delete-button" data-id="${data.id}">❌</span>
+                    </div>
+                `;
+                messagesContainer.appendChild(messageElement);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            });
+
+            // Handle typing indicator
+            socket.on('typing', (username) => {
+                clearTimeout(typingTimeout);
+                typingUser.textContent = username;
+                typingIndicator.style.visibility = 'visible';
+                typingTimeout = setTimeout(() => {
+                    typingIndicator.style.visibility = 'hidden';
+                }, 1000);
+            });
+
+            socket.on('stopTyping', () => {
+                typingIndicator.style.visibility = 'hidden';
+            });
+
+            // Handle message deletion
+            messagesContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-button')) {
+                    messageToDelete = e.target.dataset.id;
+                    confirmModal.classList.add('show');
+                }
+            });
+
+            confirmDeleteButton.addEventListener('click', () => {
+                if (messageToDelete) {
+                    socket.emit('deleteMessage', messageToDelete);
+                    messageToDelete = null;
+                }
+                confirmModal.classList.remove('show');
+            });
+
+            cancelDeleteButton.addEventListener('click', () => {
+                messageToDelete = null;
+                confirmModal.classList.remove('show');
+            });
+        });
+    </script>
+</body>
+
+</html>
