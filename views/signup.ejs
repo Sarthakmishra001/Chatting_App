@@ -6,22 +6,48 @@
     <title>Signup</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
-        .error-message {
-            color: red;
+        /* Custom Styles */
+        body.light-mode {
+            background-color: #f3f4f6;
+            color: #1f2937;
         }
-        .dark-mode {
-            background-color: #1a202c;
-            color: #e2e8f0;
+        body.dark-mode {
+            background-color: #26303d;
+            color: #f3f4f6;
         }
-        .dark-mode input, .dark-mode label {
-            background-color: #2d3748;
-            color: #e2e8f0;
+
+        .dark-mode .bg-white {
+            background-color: #2b3f5e !important;
         }
+
+        .dark-mode .text-black {
+            color: #f3f4f6 !important;
+        }
+
+        .dark-mode .border {
+            border-color: #6fabff !important;
+        }
+
+        .dark-mode input {
+            background-color: #1f2937;
+            color: #f3f4f6;
+        }
+
+        .dark-mode input:focus {
+            border-color: #3b82f6;
+        }
+
+        .dark-mode button {
+            background-color: #3142ff;
+            color: #f3f4f6;
+        }
+
+        .dark-mode button:hover {
+            background-color: #4b5563;
+        }
+
         .dark-mode .eye-icon {
-            color: #e2e8f0;
-        }
-        .light-mode .eye-icon {
-            color: #4a5568;
+            stroke: #f3f4f6;
         }
     </style>
 </head>
@@ -29,7 +55,7 @@
     <div id="card" class="bg-white w-96 p-6 rounded-lg shadow-lg transition duration-300">
         <h2 class="text-2xl font-bold mb-4">Signup</h2>
         <% if (typeof error !== 'undefined') { %>
-            <p class="error-message"><%= error %></p>
+            <p class="error-message text-red-500"><%= error %></p>
         <% } %>
         <form action="/signup" method="POST" class="space-y-4">
             <div>
@@ -64,9 +90,7 @@
 
         switchModeButton.addEventListener('click', () => {
             document.body.classList.toggle('dark-mode');
-            card.classList.toggle('bg-white');
-            card.classList.toggle('bg-gray-800');
-            eyeIcon.classList.toggle('eye-icon');
+            document.body.classList.toggle('light-mode');
         });
 
         togglePassword.addEventListener('click', () => {

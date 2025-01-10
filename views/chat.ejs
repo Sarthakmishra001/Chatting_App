@@ -1,326 +1,360 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat</title>
+    <title>Chat App</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        .black-ui {
-            background-color: #212121;
-            color: #e0e0e0;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
         }
-
-        .black-ui .bg-sender {
-            background-color: #888888;
-            color: #ffffff;
+    
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --chat-bg: #e0f7fa;
+            --chat-text-color: #000000;
+            --sender-bg: #4caf50;
+            --sender-text-color: #ffffff;
+            --receiver-bg: #2196f3;
+            --receiver-text-color: #ffffff;
         }
-
-        .black-ui .bg-receiver {
-            background-color: #00a651;
-            color: #ffffff;
+    
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --chat-bg: #2a2a2a;
+            --chat-text-color: #ffffff;
+            --sender-bg: #66bb6a;
+            --sender-text-color: #ffffff;
+            --receiver-bg: #1565c0;
+            --receiver-text-color: #ffffff;
         }
-
-        .white-ui {
-            background-color: #ffffff;
-            color: #000000;
-        }
-
-        .white-ui .bg-sender {
-            background-color: #888888;
-            color: #ffffff;
-        }
-
-        .white-ui .bg-receiver {
-            background-color: #00a651;
-            color: #ffffff;
-        }
-
-        .navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background-color: #007bff;
-            color: white;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .toggle-button {
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .toggle-button.black-ui {
-            background-color: #414141e3;
-            color: #ffffff;
-        }
-
-        .typing-indicator {
-            font-style: italic;
-            color: #888;
-            margin-bottom: 10px;
-            height: 1.5rem;
-            display: flex;
-            align-items: center;
-            visibility: hidden;
-        }
-
-        .content {
+    
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            margin-top: 4rem;
-            overflow: hidden;
         }
-
-        .messages-container {
+    
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background-color: #4a90e2;
+            color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 10;
+        }
+    
+        .heading {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+    
+        .toggle-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #fff;
+        }
+    
+        .chat-container {
             flex: 1;
             overflow-y: auto;
-            padding: 0.5rem;
-            text-align: left;
-        }
-
-        .message-input {
-            background-color: #f1f1f1;
-            padding: 1rem;
-            border-top: 1px solid #ddd;
-        }
-
-        .message {
-            max-width: 75%;
-            word-wrap: break-word;
-            white-space: pre-wrap;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            text-align: left;
-            margin: 0;
-            box-sizing: border-box;
-        }
-
-        .bg-sender {
-            background-color: #14ffff;
-            color: #ffffff;
-            align-self: flex-end;
-            position: relative;
-        }
-
-        .bg-receiver {
-            background-color: #00a651;
-            color: #ffffff;
-            align-self: flex-start;
-            position: relative;
-        }
-
-        .delete-button {
-            cursor: pointer;
-            margin-left: 0.5rem;
-            color: #f00;
-            font-size: 1rem;
-            display: none;
-            position: absolute;
-            right: 0.5rem;
-            top: 0.5rem;
-        }
-
-        .message:hover .delete-button {
-            display: inline;
-        }
-
-        .typing-indicator {
-            position: absolute;
-            bottom: 10px;
-            left: 0;
-            right: 0;
-            font-style: italic;
-            color: #888;
-            text-align: center;
-            height: 1.5rem;
-            visibility: hidden;
-            transition: visibility 0.3s ease;
-        }
-
-        /* Modal styles */
-        #confirmModal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            background-color: var(--bg-color);
             display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1001;
-            visibility: hidden;
+            flex-direction: column;
+            gap: 10px;
+            padding-top: 50px;
         }
-
-        #confirmModal.show {
+    
+        .message {
+            max-width: 60%;
+            padding: 10px;
+            border-radius: 10px;
+            word-wrap: break-word;
+            font-size: 1rem;
+            position: relative;
+        }
+    
+        .sent {
+            align-self: flex-end;
+            background-color: var(--sender-bg);
+            color: var(--sender-text-color);
+        }
+    
+        .received {
+            align-self: flex-start;
+            background-color: var(--receiver-bg);
+            color: var(--receiver-text-color);
+        }
+    
+        .input-container {
+            display: flex;
+            padding: 10px;
+            background-color: var(--bg-color);
+            border-top: 1px solid #ccc;
+        }
+    
+        .input-container input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            font-size: 1rem;
+            outline: none;
+        }
+    
+        .input-container button {
+            margin-left: 10px;
+            padding: 10px;
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+    
+        .input-container button:hover {
+            background-color: #45a049;
+        }
+    
+        .typing-notification {
+            font-size: 0.9rem;
+            color: gray;
+            padding: 5px;
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: auto;
+            max-width: 80%;
+            z-index: 5;
+            display: none;
+        }
+    
+        /* Hover effect for the delete button */
+        .message:hover .delete-btn {
             visibility: visible;
         }
-
-        .modal-content {
-            background: #fff;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            text-align: center;
+    
+        .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: transparent;
+            border: none;
+            color: #ff0000;
+            font-size: 1.5rem;
+            visibility: hidden; /* Initially hidden */
+            cursor: pointer;
+        }
+    
+        .delete-options {
+            display: none;
+            position: absolute;
+            top: 30px;
+            right: 5px;
+            background: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 160px;
+            z-index: 999;
+        }
+    
+        .delete-options button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background-color: #f5f5f5;
+            cursor: pointer;
+            border-radius: 8px;
+            text-align: left;
+        }
+    
+        .delete-options button:hover {
+            background-color: #efefef;
+        }
+    
+        .delete-options button.delete-for-me, 
+        .delete-options button.delete-for-everyone {
+            color: #ff0000; /* Red text for "Delete for Me" and "Delete for Everyone" */
+        }
+    
+        .delete-options button.cancel {
+            color: #28a745; /* Green text for "Cancel" */
+        }
+    
+        /* Show the delete options */
+        .message.show-options .delete-options {
+            display: block;
+        }
+    
+        .message.show-options .delete-btn {
+            visibility: hidden;
         }
     </style>
+    
 </head>
+<body>
 
-<body class="white-ui" data-scroll-container>
     <div class="navbar">
-        <div class="text-xl font-bold">Chat Room</div>
-        <button id="toggleButton" class="toggle-button">
-            <i class="fas fa-sun"></i>
-        </button>
-    </div>
-    <div class="content" data-scroll-container>
-        <div class="messages-container" id="messagesContainer">
-            <div class="flex flex-col space-y-4" id="messages">
-                <% messages.forEach(function(message) { %>
-                    <div class="flex <% if(message.sender === currentUser) { %> justify-end <% } else { %> justify-start <% } %>">
-                        <div class="message <% if(message.sender === currentUser) { %> bg-sender <% } else { %> bg-receiver <% } %>">
-                            <strong><%= message.sender %>: </strong><%= message.text %>
-                            <span class="delete-button" data-id="<%= message._id %>">❌</span>
-                        </div>
-                    </div>
-                <% }) %>
-            </div>
-        </div>
-        <div id="typingIndicator" class="typing-indicator">
-            <span id="typingUser"></span> is typing...
-        </div>
-        <div class="message-input">
-            <form id="messageForm" class="flex">
-                <input type="text" id="messageInput" placeholder="Type your message..."
-                    class="flex-grow p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <button type="submit"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-lg focus:outline-none">
-                    Send
-                </button>
-            </form>
-        </div>
+        <div class="heading">Chat Room</div>
+        <button class="toggle-btn" id="themeToggle" onclick="toggleTheme()">☀️</button>
     </div>
 
-    <!-- Confirmation Modal -->
-    <div id="confirmModal" class="modal-content">
-        <h2 class="text-lg font-bold mb-4">Confirm Deletion</h2>
-        <p>Are you sure you want to delete this message?</p>
-        <div class="mt-4 flex justify-end">
-            <button id="confirmDelete" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700">Delete</button>
-            <button id="cancelDelete" class="ml-2 bg-gray-300 text-black px-4 py-2 rounded-lg hover:bg-gray-500">Cancel</button>
-        </div>
+    <div class="chat-container" id="chatContainer">
+        <% messages.forEach(message => { %>
+            <div class="message <%= message.sender === username ? 'sent' : 'received' %>" id="message_<%= message._id %>">
+                <%= message.sender === username ? '' : `<strong>${message.sender}:</strong>` %> <%= message.text %>
+
+                <!-- Delete Icon (visible on hover) -->
+                <button class="delete-btn" onclick="showDeleteOptions('<%= message._id %>')">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+
+                <!-- Delete Options Dropdown -->
+                <div class="delete-options">
+                    <button class="delete-for-me" onclick="deleteForMe('<%= message._id %>')">Delete for Me</button>
+                    <button class="delete-for-everyone" onclick="deleteForEveryone('<%= message._id %>')">Delete for Everyone</button>
+                    <button class="cancel" onclick="cancelDelete('<%= message._id %>')">Cancel</button>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+
+    <div id="typingNotification" class="typing-notification">Someone is typing...</div>
+
+    <div class="input-container">
+        <input type="text" id="messageInput" placeholder="Type a message..." maxlength="200">
+        <button onclick="sendMessage()">Send</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const toggleButton = document.getElementById('toggleButton');
-            const typingIndicator = document.getElementById('typingIndicator');
-            const typingUser = document.getElementById('typingUser');
-            const messageInput = document.getElementById('messageInput');
-            const messagesContainer = document.getElementById('messagesContainer');
-            const confirmModal = document.getElementById('confirmModal');
-            const confirmDeleteButton = document.getElementById('confirmDelete');
-            const cancelDeleteButton = document.getElementById('cancelDelete');
-            let messageToDelete = null;
-            let isBlackUI = false;
-            let typingTimeout;
+        const socket = io();  
+        const currentUsername = "<%= username %>";  
 
-            // Toggle UI mode
-            toggleButton.addEventListener('click', () => {
-                if (isBlackUI) {
-                    document.body.classList.remove('black-ui');
-                    document.body.classList.add('white-ui');
-                    toggleButton.classList.remove('black-ui');
-                    toggleButton.innerHTML = '<i class="fas fa-sun"></i>';
-                } else {
-                    document.body.classList.remove('white-ui');
-                    document.body.classList.add('black-ui');
-                    toggleButton.classList.add('black-ui');
-                    toggleButton.innerHTML = '<i class="fas fa-moon"></i>';
+        function toggleTheme() {
+            const body = document.body;
+            const toggleBtn = document.getElementById('themeToggle');
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                toggleBtn.innerHTML = '☀️';
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                toggleBtn.innerHTML = '🌙';
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (message) {
+                socket.emit('newMessage', { sender: currentUsername, text: message }); // Emit message to server
+                displayMessage(currentUsername, message, true); // Display locally
+                input.value = '';
+            }
+        }
+
+        socket.on('messageBroadcast', (data) => {
+            // Skip displaying the message if the sender is the current user
+            if (data.sender !== currentUsername) {
+                displayMessage(data.sender, data.text, false);
+            }
+        });
+
+        socket.on('messageDeletedForMe', (data) => {
+            if (data.username === currentUsername) {
+                const messageElement = document.getElementById(`message_${data.messageId}`);
+                if (messageElement) {
+                    messageElement.style.display = 'none';
                 }
-                isBlackUI = !isBlackUI;
-            });
+            }
+        });
 
-            const socket = io();
+        socket.on('messageDeletedForEveryone', (data) => {
+            const messageElement = document.getElementById(`message_${data.messageId}`);
+            if (messageElement) {
+                messageElement.style.display = 'none';
+            }
+        });
 
-            const messageForm = document.getElementById('messageForm');
+        function displayMessage(sender, text, isSender) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', isSender ? 'sent' : 'received');
+            messageElement.innerHTML = isSender ? text : `<strong>${sender}:</strong> ${text}`;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
 
-            // Handle new message form submission
-            messageForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const message = messageInput.value.trim();
-                if (message) {
-                    socket.emit('newMessage', {
-                        sender: '<%= currentUser %>',
-                        text: message
-                    });
-                    messageInput.value = '';
-                    socket.emit('stopTyping');
-                }
-            });
+        function showDeleteOptions(messageId) {
+            const messageElement = document.getElementById(`message_${messageId}`);
+            if (messageElement) {
+                messageElement.classList.add('show-options');
+            }
+        }
 
-            // Emit typing event
-            messageInput.addEventListener('input', () => {
-                socket.emit('typing', '<%= currentUser %>');
-            });
+        function cancelDelete(messageId) {
+            const messageElement = document.getElementById(`message_${messageId}`);
+            if (messageElement) {
+                messageElement.classList.remove('show-options');
+            }
+        }
 
-            // Handle incoming messages
-            socket.on('messageBroadcast', (data) => {
-                const messageElement = document.createElement('div');
-                messageElement.classList.add('flex', data.sender === '<%= currentUser %>' ? 'justify-end' : 'justify-start');
-                messageElement.innerHTML = `
-                    <div class="message ${data.sender === '<%= currentUser %>' ? 'bg-sender' : 'bg-receiver'}">
-                        <strong>${data.sender}: </strong>${data.text}
-                        <span class="delete-button" data-id="${data.id}">❌</span>
-                    </div>
-                `;
-                messagesContainer.appendChild(messageElement);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            });
+        function deleteForMe(messageId) {
+            const messageElement = document.getElementById(`message_${messageId}`);
+            if (messageElement) {
+                messageElement.style.display = 'none'; // Hide the message for the current user
+            }
+        }
 
-            // Handle typing indicator
-            socket.on('typing', (username) => {
-                clearTimeout(typingTimeout);
-                typingUser.textContent = username;
-                typingIndicator.style.visibility = 'visible';
-                typingTimeout = setTimeout(() => {
-                    typingIndicator.style.visibility = 'hidden';
-                }, 1000);
-            });
+        function deleteForEveryone(messageId) {
+            const messageElement = document.getElementById(`message_${messageId}`);
+            if (messageElement) {
+                messageElement.style.display = 'none'; // Hide the message for everyone
+            }
+        }
 
-            socket.on('stopTyping', () => {
-                typingIndicator.style.visibility = 'hidden';
-            });
+        const messageInput = document.getElementById('messageInput');
+        const typingNotification = document.getElementById('typingNotification');
 
-            // Handle message deletion
-            messagesContainer.addEventListener('click', (e) => {
-                if (e.target.classList.contains('delete-button')) {
-                    messageToDelete = e.target.dataset.id;
-                    confirmModal.classList.add('show');
-                }
-            });
+        messageInput.addEventListener('input', () => {
+            socket.emit('typing', { user: currentUsername });
+        });
 
-            confirmDeleteButton.addEventListener('click', () => {
-                if (messageToDelete) {
-                    socket.emit('deleteMessage', messageToDelete);
-                    messageToDelete = null;
-                }
-                confirmModal.classList.remove('show');
-            });
+        socket.on('displayTyping', (data) => {
+            typingNotification.style.display = 'block';
+            typingNotification.innerHTML = `${data.user} is typing...`;
+            setTimeout(() => {
+                typingNotification.style.display = 'none';
+            }, 1000);
+        });
 
-            cancelDeleteButton.addEventListener('click', () => {
-                messageToDelete = null;
-                confirmModal.classList.remove('show');
-            });
+        messageInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
         });
     </script>
 </body>
-
 </html>
