@@ -1,13 +1,14 @@
 {
   "name": "chating-app",
   "version": "1.0.0",
-  "description": "",
+  "description": "Real time chat application",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node app.js",
+    "dev": "nodemon app.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Sarthak Mishra",
   "license": "ISC",
   "dependencies": {
     "dotenv": "^16.4.7",
