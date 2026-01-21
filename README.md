@@ -5,7 +5,7 @@ It supports a lightweight signup with a shared password, persistent messages, ty
 
 ### Live Demo
 
-- **Deployed on Render**: `https://<your-render-app-url>.onrender.com`  
+- **Deployed on Render**: `https://echochat-app-upsw.onrender.com`  
   - Replace the URL above with your actual deployed link.
 
 ### Features
