@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat App</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- WebRTC video call styles -->
+    <link rel="stylesheet" href="/css/videocall.css">
     <style>
         * {
             margin: 0;
@@ -13,7 +16,7 @@
             box-sizing: border-box;
             font-family: Arial, sans-serif;
         }
-    
+
         :root {
             --bg-color: #ffffff;
             --text-color: #000000;
@@ -24,7 +27,7 @@
             --receiver-bg: #2196f3;
             --receiver-text-color: #ffffff;
         }
-    
+
         [data-theme="dark"] {
             --bg-color: #1a1a1a;
             --text-color: #cb1818;
@@ -35,7 +38,7 @@
             --receiver-bg: #1565c0;
             --receiver-text-color: #ffffff;
         }
-    
+
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
@@ -44,7 +47,7 @@
             flex-direction: column;
             height: 100vh;
         }
-    
+
         .navbar {
             display: flex;
             justify-content: space-between;
@@ -56,12 +59,12 @@
             position: relative;
             z-index: 10;
         }
-    
+
         .heading {
             font-size: 1.5rem;
             font-weight: bold;
         }
-    
+
         .toggle-btn {
             background: none;
             border: none;
@@ -69,7 +72,7 @@
             font-size: 1.5rem;
             color: #fff;
         }
-    
+
         .chat-container {
             flex: 1;
             overflow-y: auto;
@@ -80,7 +83,7 @@
             gap: 10px;
             padding-top: 50px;
         }
-    
+
         .message {
             max-width: 60%;
             padding: 10px;
@@ -89,26 +92,26 @@
             font-size: 1rem;
             position: relative;
         }
-    
+
         .sent {
             align-self: flex-end;
             background-color: var(--sender-bg);
             color: var(--sender-text-color);
         }
-    
+
         .received {
             align-self: flex-start;
             background-color: var(--receiver-bg);
             color: var(--receiver-text-color);
         }
-    
+
         .input-container {
             display: flex;
             padding: 10px;
             background-color: var(--bg-color);
             border-top: 1px solid #ccc;
         }
-    
+
         .input-container input {
             flex: 1;
             padding: 10px;
@@ -117,7 +120,7 @@
             font-size: 1rem;
             outline: none;
         }
-    
+
         .input-container button {
             margin-left: 10px;
             padding: 10px;
@@ -128,11 +131,11 @@
             cursor: pointer;
             font-size: 1rem;
         }
-    
+
         .input-container button:hover {
             background-color: #45a049;
         }
-    
+
         .typing-notification {
             font-size: 0.9rem;
             color: rgb(208, 197, 197);
@@ -149,12 +152,12 @@
             z-index: 5;
             display: none;
         }
-    
+
         /* Hover effect for the delete button */
         .message:hover .delete-btn {
             visibility: visible;
         }
-    
+
         .delete-btn {
             position: absolute;
             top: 5px;
@@ -163,10 +166,11 @@
             border: none;
             color: #ff0000;
             font-size: 1.5rem;
-            visibility: hidden; /* Initially hidden */
+            visibility: hidden;
+            /* Initially hidden */
             cursor: pointer;
         }
-    
+
         .delete-options {
             display: none;
             position: absolute;
@@ -179,7 +183,7 @@
             width: 160px;
             z-index: 999;
         }
-    
+
         .delete-options button {
             width: 100%;
             padding: 10px;
@@ -189,56 +193,66 @@
             border-radius: 8px;
             text-align: left;
         }
-    
+
         .delete-options button:hover {
             background-color: #efefef;
         }
-    
-        .delete-options button.delete-for-me, 
+
+        .delete-options button.delete-for-me,
         .delete-options button.delete-for-everyone {
-            color: #ff0000; /* Red text for "Delete for Me" and "Delete for Everyone" */
+            color: #ff0000;
+            /* Red text for "Delete for Me" and "Delete for Everyone" */
         }
-    
+
         .delete-options button.cancel {
-            color: #28a745; /* Green text for "Cancel" */
+            color: #28a745;
+            /* Green text for "Cancel" */
         }
-    
+
         /* Show the delete options */
         .message.show-options .delete-options {
             display: block;
         }
-    
+
         .message.show-options .delete-btn {
             visibility: hidden;
         }
     </style>
-    
+
 </head>
+
 <body>
 
     <div class="navbar">
         <div class="heading">EchoChat</div>
-        <button class="toggle-btn" id="themeToggle" onclick="toggleTheme()">☀️</button>
+        <div style="display:flex;align-items:center;gap:6px;">
+            <!-- Video Call button -->
+            <button id="videoCallBtn" onclick="startCall()" title="Start Video Call">📹</button>
+            <button class="toggle-btn" id="themeToggle" onclick="toggleTheme()">☀️</button>
+        </div>
     </div>
 
     <div class="chat-container" id="chatContainer">
-        <% messages.forEach(message => { %>
-            <div class="message <%= message.sender === username ? 'sent' : 'received' %>" id="message_<%= message._id %>">
-                <%= message.sender === username ? '' : `<strong>${message.sender}:</strong>` %> <%= message.text %>
+        <% messages.forEach(message=> { %>
+            <div class="message <%= message.sender === username ? 'sent' : 'received' %>"
+                id="message_<%= message._id %>">
+                <%= message.sender===username ? '' : `<strong>${message.sender}:</strong>` %> <%= message.text %>
 
-                <!-- Delete Icon (visible on hover) -->
-                <button class="delete-btn" onclick="showDeleteOptions('<%= message._id %>')">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
+                        <!-- Delete Icon (visible on hover) -->
+                        <button class="delete-btn" onclick="showDeleteOptions('<%= message._id %>')">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
 
-                <!-- Delete Options Dropdown -->
-                <div class="delete-options">
-                    <button class="delete-for-me" onclick="deleteForMe('<%= message._id %>')">Delete for Me</button>
-                    <button class="delete-for-everyone" onclick="deleteForEveryone('<%= message._id %>')">Delete for Everyone</button>
-                    <button class="cancel" onclick="cancelDelete('<%= message._id %>')">Cancel</button>
-                </div>
+                        <!-- Delete Options Dropdown -->
+                        <div class="delete-options">
+                            <button class="delete-for-me" onclick="deleteForMe('<%= message._id %>')">Delete for
+                                Me</button>
+                            <button class="delete-for-everyone" onclick="deleteForEveryone('<%= message._id %>')">Delete
+                                for Everyone</button>
+                            <button class="cancel" onclick="cancelDelete('<%= message._id %>')">Cancel</button>
+                        </div>
             </div>
-        <% }) %>
+            <% }) %>
     </div>
 
     <div id="typingNotification" class="typing-notification">Someone is typing...</div>
@@ -248,10 +262,51 @@
         <button onclick="sendMessage()">Send</button>
     </div>
 
+    <!-- ===== Video Call Modal ===== -->
+    <div id="videoCallModal">
+        <div class="video-grid">
+            <!-- Remote video (full size) -->
+            <video id="remoteVideo" autoplay playsinline></video>
+
+            <!-- Waiting label before remote stream connects -->
+            <div id="remoteWaiting" style="display:flex;">Waiting for remote video…</div>
+
+            <!-- Local video (picture-in-picture) -->
+            <video id="localVideo" autoplay playsinline muted></video>
+
+            <!-- Camera-off placeholder instead of local video -->
+            <div id="localVideoOff">🚫</div>
+        </div>
+
+        <!-- Call controls -->
+        <div class="call-controls">
+            <button class="ctrl-btn" id="muteBtn" onclick="toggleMute()" title="Mute">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <button class="ctrl-btn" id="endCallBtn" onclick="endCall()" title="End Call">
+                <i class="fas fa-phone-slash"></i>
+            </button>
+            <button class="ctrl-btn" id="cameraBtn" onclick="toggleCamera()" title="Turn Camera Off">
+                <i class="fas fa-video"></i>
+            </button>
+        </div>
+
+        <p id="callStatusLabel"></p>
+    </div>
+
+    <!-- ===== Incoming Call Banner ===== -->
+    <div id="incomingCallBanner">
+        <p id="incomingCallerText">Incoming call…</p>
+        <div class="banner-actions">
+            <button id="acceptCallBtn" onclick="acceptCall()">✅ Accept</button>
+            <button id="rejectCallBtn" onclick="rejectCall()">❌ Reject</button>
+        </div>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();  
-        const currentUsername = "<%= username %>";  
+        const socket = io();
+        const currentUsername = "<%= username %>";
 
         function toggleTheme() {
             const body = document.body;
@@ -356,5 +411,8 @@
             }
         });
     </script>
+    <!-- WebRTC module — loaded after socket & currentUsername are defined -->
+    <script src="/js/webrtc.js"></script>
 </body>
+
 </html>

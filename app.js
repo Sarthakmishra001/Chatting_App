@@ -34,6 +34,9 @@ app.use(session({
 
 let users = {};
 
+// Maps username -> socket.id for WebRTC signaling routing
+const socketUsers = {};
+
 app.get('/', (req, res) => res.redirect('/signup'));
 
 app.get('/signup', (req, res) => res.render('signup'));
@@ -98,7 +101,65 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('displayTyping', data);
   });
 
+  /* ================= WebRTC Signaling ================= */
+
+  // Store username → socket.id mapping
+  socket.on('register-user', (username) => {
+    socketUsers[username] = socket.id;
+    console.log(`Registered: ${username} -> ${socket.id}`);
+  });
+
+  // Caller initiates: forward SDP offer to the target peer
+  socket.on('call-user', ({ to, from, offer }) => {
+    const targetSocketId = socketUsers[to];
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('video-offer', { from, offer });
+    }
+  });
+
+  // Callee answers: forward SDP answer back to the original caller
+  socket.on('video-answer', ({ to, answer }) => {
+    const targetSocketId = socketUsers[to];
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('video-answer', { answer });
+    }
+  });
+
+  // Relay ICE candidates between peers
+  socket.on('ice-candidate', ({ to, candidate }) => {
+    const targetSocketId = socketUsers[to];
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('ice-candidate', { candidate });
+    }
+  });
+
+  // Callee rejected the incoming call
+  socket.on('call-rejected', ({ to }) => {
+    const targetSocketId = socketUsers[to];
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('call-rejected');
+    }
+  });
+
+  // Either party ends the call — forward to the peer
+  socket.on('call-ended', ({ to }) => {
+    const targetSocketId = socketUsers[to];
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('call-ended');
+    }
+  });
+
+  /* ================= Disconnect Cleanup ================= */
+
   socket.on('disconnect', () => {
+    // Remove stale username → socket mapping
+    for (const [username, id] of Object.entries(socketUsers)) {
+      if (id === socket.id) {
+        delete socketUsers[username];
+        console.log(`Removed from socketUsers: ${username}`);
+        break;
+      }
+    }
     console.log('A user disconnected');
   });
 });
