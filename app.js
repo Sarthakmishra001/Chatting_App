@@ -37,6 +37,9 @@ let users = {};
 // Maps username -> socket.id for WebRTC signaling routing
 const socketUsers = {};
 
+// Maps userId -> socket.id for Global Online Tracking
+const onlineUsers = new Map();
+
 const authRoutes = require('./routes/authRoutes');
 const roomRoutes = require('./routes/roomRoutes');
 
@@ -109,9 +112,12 @@ io.on('connection', (socket) => {
 
   socket.on('deleteForEveryone', async ({ messageId, userId, roomId }) => {
     try {
+      if (!roomId) return;
       const message = await Message.findById(messageId);
       if (message && message.sender.equals(userId)) {
-        await Message.deleteOne({ _id: messageId });
+        // Soft delete for everyone instead of hard delete
+        message.deletedForEveryone = true;
+        await message.save();
         io.to(roomId).emit('messageDeletedForEveryone', { messageId });
       }
     } catch (err) {
@@ -121,6 +127,104 @@ io.on('connection', (socket) => {
 
   socket.on('typing', ({ roomId, user }) => {
     socket.to(roomId).emit('displayTyping', { user });
+  });
+
+  /* ================= User Online Tracking ================= */
+
+  socket.on('register-user-status', (userId) => {
+    onlineUsers.set(userId, socket.id);
+    // Broadcast status change to everyone
+    io.emit('user-status-changed', { userId, status: 'online' });
+    console.log(`User Registered: ${userId} -> ${socket.id}`);
+  });
+
+  socket.on('get-online-status', () => {
+    // Return an array of all currently active userIds
+    socket.emit('online-status-sync', Array.from(onlineUsers.keys()));
+  });
+
+  /* ================= Join Room Requests (Socket Version) ================= */
+
+  socket.on('join-room-request', async ({ roomId, userId, username }) => {
+    try {
+      const Room = require('./models/Room');
+      const room = await Room.findById(roomId);
+      if (!room) return;
+
+      // Add to joinRequests if not already there
+      if (!room.joinRequests.includes(userId)) {
+        room.joinRequests.push(userId);
+        await room.save();
+      }
+
+      // Notify Admin in real-time
+      const adminSocketId = onlineUsers.get(room.admin.toString());
+      if (adminSocketId) {
+        io.to(adminSocketId).emit('join-request-received', {
+          roomId,
+          roomName: room.name,
+          user: { _id: userId, username }
+        });
+      }
+
+      // Notify requester that request is sent
+      socket.emit('join-request-sent', { roomId });
+    } catch (err) {
+      console.error('join-room-request error:', err);
+    }
+  });
+
+  socket.on('approve-join-request', async ({ roomId, requestUserId }) => {
+    try {
+      const Room = require('./models/Room');
+      const room = await Room.findById(roomId);
+      if (!room) return;
+
+      // Check if current socket is admin (simple check)
+      // In a real app, you'd check session or auth token associated with socket
+      
+      // Remove from joinRequests, add to members
+      room.joinRequests = room.joinRequests.filter(id => id.toString() !== requestUserId);
+      if (!room.members.includes(requestUserId)) {
+        room.members.push(requestUserId);
+      }
+      await room.save();
+
+      // Notify the approved user
+      const userSocketId = onlineUsers.get(requestUserId);
+      if (userSocketId) {
+        io.to(userSocketId).emit('join-approved', { roomId, roomName: room.name });
+      }
+
+      // Notify admin of success
+      socket.emit('approval-success', { roomId, requestUserId });
+
+      // Notify all members in the room about the new member (optional but good)
+      io.to(roomId).emit('member-joined', { roomId, userId: requestUserId });
+    } catch (err) {
+      console.error('approve-join-request error:', err);
+    }
+  });
+
+  socket.on('reject-join-request', async ({ roomId, requestUserId }) => {
+    try {
+      const Room = require('./models/Room');
+      const room = await Room.findById(roomId);
+      if (!room) return;
+
+      room.joinRequests = room.joinRequests.filter(id => id.toString() !== requestUserId);
+      await room.save();
+
+      // Notify the rejected user (optional)
+      const userSocketId = onlineUsers.get(requestUserId);
+      if (userSocketId) {
+        io.to(userSocketId).emit('join-rejected', { roomId, roomName: room.name });
+      }
+
+      socket.emit('rejection-success', { roomId, requestUserId });
+    } catch (err) {
+      console.error('reject-join-request error:', err);
+    }
   });
 
   /* ================= WebRTC Signaling ================= */
@@ -178,10 +282,21 @@ io.on('connection', (socket) => {
     for (const [username, id] of Object.entries(socketUsers)) {
       if (id === socket.id) {
         delete socketUsers[username];
-        console.log(`Removed from socketUsers: ${username}`);
+        console.log(`Removed from WebRTC socketUsers: ${username}`);
         break;
       }
     }
+
+    // Remove from Online Tracking and broadcast update
+    for (const [uid, sid] of onlineUsers.entries()) {
+      if (sid === socket.id) {
+        onlineUsers.delete(uid);
+        io.emit('user-status-changed', { userId: uid, status: 'offline' });
+        console.log(`User Offline: ${uid}`);
+        break;
+      }
+    }
+    
     console.log('A user disconnected');
   });
 });

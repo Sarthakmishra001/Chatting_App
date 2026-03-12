@@ -147,17 +147,25 @@ async function getLocalStream() {
 /* ========================= Caller side ========================= */
 
 /**
- * Called when the user clicks the 📹 Video Call button.
- * Prompts for a recipient username, then initiates the WebRTC handshake.
+ * Called when the user clicks the 📹 Video Call button or selects a user from the specific Dropdown.
+ * Prompts for a recipient username if not provided, then initiates the WebRTC handshake.
  */
-async function startCall() {
+async function startCall(targetUsername = null) {
     // OPT2: guard — prevent duplicate calls
     if (isInCall) {
         alert('You are already in a call.');
         return;
     }
 
-    const target = prompt('Enter the username of the person you want to call:');
+    // Hide dropdown if it was used
+    const menu = document.getElementById('callDropdown');
+    if (menu) menu.classList.remove('active');
+
+    let target = targetUsername;
+    if (!target) {
+        target = prompt('Enter the username of the person you want to call:');
+    }
+    
     if (!target || target.trim() === '') return;
     if (target.trim() === currentUsername) {
         alert('You cannot call yourself.');

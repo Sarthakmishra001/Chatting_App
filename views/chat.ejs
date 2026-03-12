@@ -86,11 +86,13 @@
 
         .message {
             max-width: 60%;
-            padding: 10px;
+            width: fit-content;
+            padding: 10px 40px 10px 10px; /* Right padding prevents text from hiding under trashcan */
             border-radius: 10px;
             word-wrap: break-word;
             font-size: 1rem;
             position: relative;
+            display: inline-block;
         }
 
         .sent {
@@ -155,19 +157,21 @@
 
         /* Hover effect for the delete button */
         .message:hover .delete-btn {
+            opacity: 1;
             visibility: visible;
         }
 
         .delete-btn {
             position: absolute;
-            top: 5px;
-            right: 5px;
+            top: 8px;
+            right: 8px;
             background: transparent;
             border: none;
             color: #ff0000;
-            font-size: 1.5rem;
+            font-size: 1.1rem; /* Smaller icon */
+            opacity: 0;
             visibility: hidden;
-            /* Initially hidden */
+            transition: opacity 0.2s ease-in-out;
             cursor: pointer;
         }
 
@@ -223,44 +227,201 @@
 
 <body>
 
-    <div class="navbar">
-        <div class="heading"># <%= room.name %></div>
-        <div style="display:flex;align-items:center;gap:6px;">
-            <a href="/lobby" class="toggle-btn" style="text-decoration:none;font-size:1rem;margin-right:10px;">Back</a>
-            <!-- Video Call button -->
-            <button id="videoCallBtn" onclick="startCall()" title="Start Video Call">📹</button>
-            <button class="toggle-btn" id="themeToggle" onclick="toggleTheme()">☀️</button>
+    <!-- CSS for the Call Dropdown Menu -->
+    <style>
+        .call-menu {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 60px;
+            background: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 220px;
+            z-index: 999;
+            color: #333;
+        }
+
+        .call-menu.active {
+            display: block;
+        }
+
+        .call-menu-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .call-menu-item:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .call-menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .call-member-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border-top: 1px solid #ccc;
+        }
+    </style>
+
+    <div class="navbar sticky top-0 z-50">
+        <div class="flex items-center gap-2">
+            <button id="mobileSidebarToggle" class="md:hidden text-white text-xl p-1" onclick="toggleMobileSidebar()">☰</button>
+            <div class="heading truncate max-w-[150px] sm:max-w-none"># <%= room.name %></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px; position:relative;">
+            <a href="/lobby" class="toggle-btn" style="text-decoration:none;font-size:0.9rem;margin-right:10px;">Back</a>
+            
+            <!-- Video Call Toggle -->
+            <button id="videoCallBtn" onclick="toggleCallMenu()" title="Start Video Call" class="p-2 hover:bg-blue-600 rounded-full transition">📹</button>
+            <button class="toggle-btn p-2 hover:bg-blue-600 rounded-full transition" id="themeToggle" onclick="toggleTheme()">☀️</button>
+            
+            <!-- Dropdown Menu -->
+            <div id="callDropdown" class="call-menu right-0 md:right-[60px]">
+                <div class="call-menu-item" style="font-weight: bold;" onclick="callAllMembers()">
+                    📞 Call All Members
+                </div>
+                <div style="padding: 8px 10px; font-size: 0.85rem; background: #e0f7fa; color: #00796b;">
+                    Select Member to Call
+                </div>
+                <div class="call-member-list">
+                    <% room.members.forEach(member => { %>
+                        <% if(member._id.toString() !== userId) { %>
+                            <div class="call-menu-item" onclick="startCall('<%= member.username %>')">
+                                <span id="call-dot-<%= member._id %>" style="width: 8px; height: 8px; border-radius: 50%; background-color: #9ca3af; margin-right: 8px;"></span>
+                                <%= member.username %>
+                            </div>
+                        <% } %>
+                    <% }) %>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="chat-container" id="chatContainer">
-        <% messages.forEach(message=> { %>
-            <div class="message <%= message.sender === username ? 'sent' : 'received' %>"
-                id="message_<%= message._id %>">
-                <%= message.sender===username ? '' : `<strong>${message.sender}:</strong>` %> <%= message.text %>
+    <!-- Main Layout wrapper for Chat and Sidebar -->
+    <div style="display: flex; flex: 1; overflow: hidden; position: relative;">
+        
+        <!-- Sidebar: Online Members (Responsive) -->
+        <div id="membersSidebar" class="members-sidebar">
+            <h3 style="font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Members</h3>
+            <ul id="membersList" style="list-style: none; padding: 0;">
+                <% room.members.forEach(member => { %>
+                    <li style="display: flex; align-items: center; margin-bottom: 12px;">
+                        <span id="status-dot-<%= member._id %>" style="width: 10px; height: 10px; border-radius: 50%; background-color: #9ca3af; margin-right: 10px; transition: background-color 0.3s;"></span>
+                        <span class="truncate"><%= member.username %> <%= member._id.toString() === userId ? '(You)' : '' %></span>
+                    </li>
+                <% }) %>
+            </ul>
+        </div>
 
-                        <!-- Delete Icon (visible on hover) -->
-                        <button class="delete-btn" onclick="showDeleteOptions('<%= message._id %>')">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
+        <!-- Overlay for mobile sidebar -->
+        <div id="sidebarOverlay" class="fixed inset-0 bg-black opacity-50 z-30 hidden md:hidden" onclick="toggleMobileSidebar()"></div>
+        
+        <!-- Center Chat Application -->
+        <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;" class="w-full">
+            <div class="chat-container" id="chatContainer" style="padding-top: 15px;">
+        <% messages.forEach(message => { %>
+            <div class="message <%= message.sender.toString() === userId ? 'sent' : 'received' %> w-fit max-w-[85%] md:max-w-[70%]"
+                 id="message_<%= message._id %>">
+                
+                <% if (message.deletedForEveryone) { %>
+                    <i style="color: #666; font-size: 0.9rem;">This message was deleted</i>
+                <% } else { %>
+                    <div class="text-sm font-medium mb-1 opacity-80">
+                        <%= message.sender.toString() === userId ? 'You' : message.senderName %>
+                    </div>
+                    <div><%= message.text %></div>
 
-                        <!-- Delete Options Dropdown -->
-                        <div class="delete-options">
-                            <button class="delete-for-me" onclick="deleteForMe('<%= message._id %>')">Delete for
-                                Me</button>
-                            <button class="delete-for-everyone" onclick="deleteForEveryone('<%= message._id %>')">Delete
-                                for Everyone</button>
-                            <button class="cancel" onclick="cancelDelete('<%= message._id %>')">Cancel</button>
-                        </div>
+                    <!-- Delete Icon (visible on hover) -->
+                    <button class="delete-btn" onclick="showDeleteOptions('<%= message._id %>')">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+
+                    <!-- Delete Options Dropdown -->
+                    <div class="delete-options">
+                        <button class="delete-for-me" onclick="deleteForMe('<%= message._id %>')">Delete for Me</button>
+                        <% if (message.sender.toString() === userId) { %>
+                            <button class="delete-for-everyone" onclick="deleteForEveryone('<%= message._id %>')">Delete for Everyone</button>
+                        <% } %>
+                        <button class="cancel" onclick="cancelDelete('<%= message._id %>')">Cancel</button>
+                    </div>
+                <% } %>
             </div>
-            <% }) %>
+        <% }) %>
     </div>
 
-    <div id="typingNotification" class="typing-notification">Someone is typing...</div>
+    <div id="typingNotification" class="typing-notification text-xs md:text-sm">Someone is typing...</div>
 
-    <div class="input-container">
-        <input type="text" id="messageInput" placeholder="Type a message..." maxlength="200">
-        <button onclick="sendMessage()">Send</button>
+    <div class="input-container p-2 sm:p-4 gap-2">
+        <input type="text" id="messageInput" placeholder="Type a message..." maxlength="200" class="flex-1 px-4 py-2 border rounded-full focus:ring-2 focus:ring-blue-400 outline-none">
+        <button onclick="sendMessage()" class="bg-blue-500 hover:bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center transition shadow-md">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+    
+    <style>
+        .members-sidebar {
+            width: 250px;
+            background-color: var(--bg-color);
+            border-right: 1px solid #ccc;
+            overflow-y: auto;
+            padding: 20px;
+            transition: transform 0.3s ease-in-out;
+            z-index: 40;
+        }
+
+        @media (max-width: 768px) {
+            .members-sidebar {
+                position: fixed;
+                left: 0;
+                top: 60px;
+                bottom: 0;
+                transform: translateX(-100%);
+            }
+            .members-sidebar.active {
+                transform: translateX(0);
+            }
+        }
+
+        .chat-container {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            border-radius: 18px;
+            padding: 8px 14px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .sent {
+            border-bottom-right-radius: 4px;
+        }
+
+        .received {
+            border-bottom-left-radius: 4px;
+        }
+    </style>
+
+    <script>
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('membersSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('hidden');
+        }
+    </script>
+  </div>
+    
+    <!-- End Right Chat Wrapper -->
     </div>
 
     <!-- ===== Video Call Modal ===== -->
@@ -313,6 +474,49 @@
 
         // Join the socket room
         socket.emit('join-room', roomId);
+        
+        // Register online status
+        socket.emit('register-user-status', currentUserId);
+
+        // Fetch all current online users
+        socket.emit('get-online-status');
+        
+        socket.on('online-status-sync', (activeUserIds) => {
+            activeUserIds.forEach(id => {
+                const dot1 = document.getElementById(`status-dot-${id}`);
+                const dot2 = document.getElementById(`call-dot-${id}`);
+                if (dot1) dot1.style.backgroundColor = '#10b981'; // Green
+                if (dot2) dot2.style.backgroundColor = '#10b981';
+            });
+        });
+
+        socket.on('user-status-changed', ({ userId, status }) => {
+            const dot1 = document.getElementById(`status-dot-${userId}`);
+            const dot2 = document.getElementById(`call-dot-${userId}`);
+            const color = status === 'online' ? '#10b981' : '#9ca3af';
+            if (dot1) dot1.style.backgroundColor = color;
+            if (dot2) dot2.style.backgroundColor = color;
+        });
+
+        // Dropdown Toggle logic
+        function toggleCallMenu() {
+            const menu = document.getElementById('callDropdown');
+            menu.classList.toggle('active');
+        }
+
+        function callAllMembers() {
+            alert("Mesh WebRTC 'Call All Members' feature is currently in development! Please select a specific user to call 1-on-1.");
+            toggleCallMenu();
+        }
+
+        // Hide dropdown if clicked outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('callDropdown');
+            const btn = document.getElementById('videoCallBtn');
+            if (menu.classList.contains('active') && !menu.contains(event.target) && event.target !== btn) {
+                menu.classList.remove('active');
+            }
+        });
 
         function toggleTheme() {
             const body = document.body;
@@ -355,7 +559,7 @@
         socket.on('messageDeletedForEveryone', (data) => {
             const messageElement = document.getElementById(`message_${data.messageId}`);
             if (messageElement) {
-                messageElement.style.display = 'none';
+                messageElement.innerHTML = `<i style="color: #666;">This message was deleted</i>`;
             }
         });
 

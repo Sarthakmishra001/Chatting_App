@@ -13,8 +13,8 @@
         .dark-mode button[type="submit"] { background-color: #3142ff; }
     </style>
 </head>
-<body class="flex items-center justify-center h-screen">
-    <div class="bg-white w-96 p-6 rounded-lg shadow-lg">
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white w-full max-w-md p-6 rounded-lg shadow-lg">
         <h2 class="text-2xl font-bold mb-4">Login</h2>
         <% if (typeof error !== 'undefined' && error) { %>
             <p class="text-red-500 mb-4"><%= error %></p>

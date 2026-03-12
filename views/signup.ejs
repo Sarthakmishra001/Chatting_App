@@ -54,8 +54,8 @@
     </style>
 </head>
 
-<body class="flex items-center justify-center h-screen bg-gray-100 light-mode">
-    <div id="card" class="bg-white w-96 p-6 rounded-lg shadow-lg transition duration-300">
+<body class="flex items-center justify-center min-h-screen bg-gray-100 light-mode p-4">
+    <div id="card" class="bg-white w-full max-w-md p-6 rounded-lg shadow-lg transition duration-300">
         <h2 class="text-2xl font-bold mb-4">Signup</h2>
         <% if (typeof error !=='undefined' ) { %>
             <p class="error-message text-red-500">
@@ -92,13 +92,13 @@
                         </div>
                     </div>
                     <button type="submit"
-                        class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+                        class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow transition">
                         Sign Up
                     </button>
-                    <p class="mt-4 text-center text-sm">Already have an account? <a href="/login" class="text-blue-500">Login</a></p>
+                    <p class="mt-4 text-center text-sm">Already have an account? <a href="/login" class="text-blue-500 font-bold">Login</a></p>
                 </form>
                 <button id="switchMode"
-                    class="mt-4 w-full bg-gray-300 hover:bg-gray-500 text-black font-bold py-2 px-4 rounded-lg">Switch
+                    class="mt-4 w-full bg-gray-200 hover:bg-gray-300 text-black font-bold py-2 px-4 rounded-lg transition border border-gray-300">Switch
                     Mode</button>
     </div>
 

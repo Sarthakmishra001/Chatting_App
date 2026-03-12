@@ -7,87 +7,222 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 text-gray-800">
-    <nav class="bg-white p-4 shadow flex justify-between items-center">
+    <nav class="bg-white p-4 shadow flex justify-between items-center sticky top-0 z-50">
         <h1 class="text-xl font-bold text-blue-600">EchoChat Lobby</h1>
-        <div>
-            <span class="mr-4">Logged in as: <strong><%= username %></strong></span>
-            <a href="/logout" class="text-red-500 hover:text-red-700 font-bold">Logout</a>
+        <div class="flex items-center">
+            <span class="mr-4 hidden md:inline text-sm">Logged in as: <strong><%= username %></strong></span>
+            <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm font-bold transition">Logout</a>
         </div>
     </nav>
 
-    <div class="container mx-auto mt-8 flex px-4 gap-8">
+    <div class="container mx-auto mt-4 lg:mt-8 flex flex-col lg:flex-row px-4 gap-4 lg:gap-8 pb-8">
         <!-- Rooms Section -->
-        <div class="w-2/3">
-            <div class="flex justify-between items-center mb-4">
+        <div class="w-full lg:w-2/3">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                 <h2 class="text-2xl font-bold">Available Rooms</h2>
                 <!-- Create Room Form -->
-                <form action="/rooms/create" method="POST" class="flex gap-2">
-                    <input type="text" name="name" placeholder="New Room Name" required class="border p-2 rounded">
-                    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Create</button>
+                <form action="/rooms/create" method="POST" class="flex w-full sm:w-auto gap-2">
+                    <input type="text" name="name" placeholder="New Room Name" required class="flex-1 border p-2 rounded focus:ring-2 focus:ring-blue-400 outline-none">
+                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow transition">Create</button>
                 </form>
             </div>
 
             <% if (query && query.error) { %>
-                <p class="text-red-500 mb-4"><%= query.error %></p>
+                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-4 rounded" role="alert">
+                    <p class="text-sm"><%= query.error %></p>
+                </div>
             <% } %>
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="roomsGrid">
                 <% rooms.forEach(room => { %>
-                    <div class="bg-white p-4 rounded shadow border">
-                        <h3 class="font-bold text-lg">#<%= room.name %></h3>
-                        <p class="text-sm text-gray-500 mb-2">Admin: <%= room.admin.username %> | <%= room.members.length %> members</p>
+                    <div class="bg-white p-4 rounded-xl shadow-sm hover:shadow-md border border-gray-100 transition" id="room-card-<%= room._id %>">
+                        <h3 class="font-bold text-lg text-gray-800">#<%= room.name %></h3>
+                        <p class="text-sm text-gray-500 mb-4">Admin: <%= room.admin.username %> • <%= room.members.length %> members</p>
                         
-                        <% if (room.isMember) { %>
-                            <a href="/rooms/<%= room._id %>/chat" class="bg-blue-500 text-white px-3 py-1 rounded inline-block">Enter Chat</a>
-                        <% } else if (room.isPending) { %>
-                            <span class="text-yellow-600 bg-yellow-100 px-3 py-1 rounded inline-block">Pending Approval</span>
-                        <% } else { %>
-                            <form action="/rooms/<%= room._id %>/request" method="POST" class="inline">
-                                <button type="submit" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded">Request Join</button>
-                            </form>
-                        <% } %>
+                        <div id="room-action-<%= room._id %>">
+                            <% if (room.isMember) { %>
+                                <a href="/rooms/<%= room._id %>/chat" class="w-full sm:w-auto text-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg inline-block transition">Enter Chat</a>
+                            <% } else if (room.isPending) { %>
+                                <span class="w-full sm:w-auto text-center text-yellow-600 bg-yellow-50 border border-yellow-200 px-4 py-2 rounded-lg inline-block">Pending Approval</span>
+                            <% } else { %>
+                                <button onclick="requestJoinSocket('<%= room._id %>')" class="w-full sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg transition border border-gray-200">Request Join</button>
+                            <% } %>
+                        </div>
                     </div>
                 <% }) %>
             </div>
             <% if (rooms.length === 0) { %>
-                <p class="text-gray-500">No rooms available. Create one!</p>
+                <div class="bg-white p-8 rounded-xl border border-dashed border-gray-300 text-center">
+                    <p class="text-gray-500">No rooms available. Create the first one!</p>
+                </div>
             <% } %>
         </div>
 
         <!-- Admin Requests Section -->
-        <div class="w-1/3 bg-white p-6 rounded shadow h-fit">
-            <h2 class="text-xl font-bold mb-4 border-b pb-2">Admin Panel</h2>
-            <% let hasRequests = false; %>
-            <% rooms.forEach(room => { %>
-                <% if (room.isAdmin && room.joinRequests.length > 0) { %>
-                    <% hasRequests = true; %>
-                    <div class="mb-4">
-                        <h4 class="font-bold text-blue-600">#<%= room.name %> Requests</h4>
-                        <ul class="mt-2 space-y-2">
-                            <% room.joinRequests.forEach(req => { %>
-                                <li class="flex justify-between items-center bg-gray-50 p-2 rounded">
-                                    <span><%= req.username %></span>
-                                    <div class="flex gap-2">
-                                        <form action="/rooms/<%= room._id %>/approve" method="POST">
-                                            <input type="hidden" name="requestUserId" value="<%= req._id %>">
-                                            <button type="submit" class="text-green-600 hover:text-green-800">✅</button>
-                                        </form>
-                                        <form action="/rooms/<%= room._id %>/reject" method="POST">
-                                            <input type="hidden" name="requestUserId" value="<%= req._id %>">
-                                            <button type="submit" class="text-red-600 hover:text-red-800">❌</button>
-                                        </form>
-                                    </div>
-                                </li>
-                            <% }) %>
-                        </ul>
-                    </div>
-                <% } %>
-            <% }) %>
-            
-            <% if (!hasRequests) { %>
-                <p class="text-gray-500 text-sm">No pending join requests.</p>
-            <% } %>
+        <div class="w-full lg:w-1/3">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 h-fit sticky top-20">
+                <h2 class="text-xl font-bold mb-4 border-b pb-2 text-gray-800 flex items-center">
+                    <span class="mr-2">🛡️</span> Admin Panel
+                </h2>
+                <div id="adminPanelContent">
+                    <% let hasRequests = false; %>
+                    <% rooms.forEach(room => { %>
+                        <% if (room.isAdmin && room.joinRequests.length > 0) { %>
+                            <% hasRequests = true; %>
+                            <div class="mb-6 last:mb-0" id="admin-room-<%= room._id %>">
+                                <h4 class="font-bold text-blue-600 mb-2 flex justify-between items-center">
+                                    <span>#<%= room.name %></span>
+                                    <span class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full"><%= room.joinRequests.length %> pending</span>
+                                </h4>
+                                <ul class="space-y-2">
+                                    <% room.joinRequests.forEach(req => { %>
+                                        <li class="flex justify-between items-center bg-gray-50 p-2.5 rounded-lg border border-gray-100" id="request-<%= room._id %>-<%= req._id %>">
+                                            <span class="font-medium text-gray-700"><%= req.username %></span>
+                                            <div class="flex gap-2">
+                                                <button onclick="approveRequestSocket('<%= room._id %>', '<%= req._id %>')" class="bg-white hover:bg-green-50 text-green-600 border border-gray-200 hover:border-green-200 w-8 h-8 rounded-full flex items-center justify-center transition" title="Approve">✓</button>
+                                                <button onclick="rejectRequestSocket('<%= room._id %>', '<%= req._id %>')" class="bg-white hover:bg-red-50 text-red-600 border border-gray-200 hover:border-red-200 w-8 h-8 rounded-full flex items-center justify-center transition" title="Reject">×</button>
+                                            </div>
+                                        </li>
+                                    <% }) %>
+                                </ul>
+                            </div>
+                        <% } %>
+                    <% }) %>
+                    
+                    <% if (!hasRequests) { %>
+                        <div id="noRequestsMsg" class="text-center py-8">
+                            <p class="text-gray-400 text-sm">No pending join requests.</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- Socket.io Script -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const userId = "<%= userId %>";
+        const username = "<%= username %>";
+
+        // Register user for status and real-time events
+        socket.emit('register-user-status', userId);
+
+        /* --- Client Emitters --- */
+
+        function requestJoinSocket(roomId) {
+            socket.emit('join-room-request', { roomId, userId, username });
+        }
+
+        function approveRequestSocket(roomId, requestUserId) {
+            socket.emit('approve-join-request', { roomId, requestUserId });
+        }
+
+        function rejectRequestSocket(roomId, requestUserId) {
+            socket.emit('reject-join-request', { roomId, requestUserId });
+        }
+
+        /* --- Client Listeners --- */
+
+        // User requested to join
+        socket.on('join-request-sent', ({ roomId }) => {
+            const container = document.getElementById(`room-action-${roomId}`);
+            if (container) {
+                container.innerHTML = `<span class="w-full sm:w-auto text-center text-yellow-600 bg-yellow-50 border border-yellow-200 px-4 py-2 rounded-lg inline-block animate-pulse">Pending Approval</span>`;
+            }
+        });
+
+        // Admin receives a new request
+        socket.on('join-request-received', ({ roomId, roomName, user }) => {
+            let adminRoom = document.getElementById(`admin-room-${roomId}`);
+            const noRequestsMsg = document.getElementById('noRequestsMsg');
+            if (noRequestsMsg) noRequestsMsg.style.display = 'none';
+
+            if (!adminRoom) {
+                const adminPanelContent = document.getElementById('adminPanelContent');
+                const roomDiv = document.createElement('div');
+                roomDiv.id = `admin-room-${roomId}`;
+                roomDiv.className = 'mb-6 last:mb-0';
+                roomDiv.innerHTML = `
+                    <h4 class="font-bold text-blue-600 mb-2 flex justify-between items-center">
+                        <span>#${roomName}</span>
+                        <span class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full" id="count-${roomId}">1 pending</span>
+                    </h4>
+                    <ul class="space-y-2" id="req-list-${roomId}"></ul>
+                `;
+                adminPanelContent.appendChild(roomDiv);
+                adminRoom = roomDiv;
+            } else {
+                // Update count if exists (simplified implementation)
+            }
+
+            const list = document.getElementById(`req-list-${roomId}`) || adminRoom.querySelector('ul');
+            if (!document.getElementById(`request-${roomId}-${user._id}`)) {
+                const li = document.createElement('li');
+                li.id = `request-${roomId}-${user._id}`;
+                li.className = 'flex justify-between items-center bg-gray-50 p-2.5 rounded-lg border border-gray-100 animate-slide-in';
+                li.innerHTML = `
+                    <span class="font-medium text-gray-700">${user.username}</span>
+                    <div class="flex gap-2">
+                        <button onclick="approveRequestSocket('${roomId}', '${user._id}')" class="bg-white hover:bg-green-50 text-green-600 border border-gray-200 hover:border-green-200 w-8 h-8 rounded-full flex items-center justify-center transition" title="Approve">✓</button>
+                        <button onclick="rejectRequestSocket('${roomId}', '${user._id}')" class="bg-white hover:bg-red-50 text-red-600 border border-gray-200 hover:border-red-200 w-8 h-8 rounded-full flex items-center justify-center transition" title="Reject">×</button>
+                    </div>
+                `;
+                list.appendChild(li);
+            }
+        });
+
+        // User gets approved - INSTANT REDIRECT
+        socket.on('join-approved', ({ roomId, roomName }) => {
+            // Show a brief toast or alert then redirect
+            // For now, instant redirect as requested
+            window.location.href = `/rooms/${roomId}/chat`;
+        });
+
+        // Admin success handlers
+        socket.on('approval-success', ({ roomId, requestUserId }) => {
+            removeRequestFromUI(roomId, requestUserId);
+        });
+
+        socket.on('rejection-success', ({ roomId, requestUserId }) => {
+            removeRequestFromUI(roomId, requestUserId);
+        });
+
+        function removeRequestFromUI(roomId, requestUserId) {
+            const reqEl = document.getElementById(`request-${roomId}-${requestUserId}`);
+            if (reqEl) {
+                reqEl.remove();
+                // If no more requests in this room, remove the room group
+                const list = document.getElementById(`req-list-${roomId}`) || document.querySelector(`#admin-room-${roomId} ul`);
+                if (list && list.children.length === 0) {
+                    const roomGroup = document.getElementById(`admin-room-${roomId}`);
+                    if (roomGroup) roomGroup.remove();
+                    
+                    // If no more rooms at all, show empty message
+                    const adminPanelContent = document.getElementById('adminPanelContent');
+                    if (adminPanelContent.children.length === 0) {
+                        const noMsg = document.createElement('div');
+                        noMsg.id = 'noRequestsMsg';
+                        noMsg.className = 'text-center py-8';
+                        noMsg.innerHTML = '<p class="text-gray-400 text-sm">No pending join requests.</p>';
+                        adminPanelContent.appendChild(noMsg);
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @keyframes slide-in {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-in {
+            animation: slide-in 0.3s ease-out forwards;
+        }
+    </style>
+</body>
+</html>
 </body>
 </html>
