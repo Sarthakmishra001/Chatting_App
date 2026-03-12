@@ -13,7 +13,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3003;
 connectDB();
 
 const FIXED_PASSWORD = process.env.FIXED_PASSWORD;
@@ -37,68 +37,90 @@ let users = {};
 // Maps username -> socket.id for WebRTC signaling routing
 const socketUsers = {};
 
-app.get('/', (req, res) => res.redirect('/signup'));
+const authRoutes = require('./routes/authRoutes');
+const roomRoutes = require('./routes/roomRoutes');
 
-app.get('/signup', (req, res) => res.render('signup'));
+// Load routers
+app.use('/', authRoutes);
+app.use('/', roomRoutes);
 
-app.post('/signup', (req, res) => {
-  const { username, password } = req.body;
-
-  if (password === FIXED_PASSWORD) {
-    req.session.user = username;
-    users[username] = username;
-    res.redirect(`/chat?user=${username}`);
-  } else {
-    res.render('signup', { error: 'Password is incorrect.' });
-  }
-});
-
-app.get('/chat', async (req, res) => {
-  if (!req.session.user) return res.redirect('/signup');
-
-  const messages = await Message.find().sort({ timestamp: 1 });
-  res.render('chat', { messages, username: req.session.user });
-});
+// Base route directs to login
+app.get('/', (req, res) => res.redirect('/login'));
 
 /* ================= SOCKET ================= */
 
 io.on('connection', (socket) => {
-  console.log('A user connected');
+  console.log('A user connected:', socket.id);
+
+  // Join a specific room for chat isolation
+  socket.on('join-room', (roomId) => {
+    socket.join(roomId);
+    console.log(`Socket ${socket.id} joined room ${roomId}`);
+  });
+
+  socket.on('leave-room', (roomId) => {
+    socket.leave(roomId);
+    console.log(`Socket ${socket.id} left room ${roomId}`);
+  });
 
   socket.on('newMessage', async (data) => {
-    const newMessage = new Message({
-      sender: data.sender,
-      text: data.text
-    });
+    const { roomId, sender, senderName, text } = data;
 
-    await newMessage.save();
-    io.emit('messageBroadcast', data);
+    try {
+      const newMessage = new Message({
+        roomId,
+        sender,
+        senderName,
+        text
+      });
+
+      await newMessage.save();
+      
+      // Emit strictly to the room
+      io.to(roomId).emit('messageBroadcast', {
+        _id: newMessage._id.toString(),
+        sender,
+        senderName,
+        text,
+        createdAt: newMessage.createdAt
+      });
+    } catch (err) {
+      console.error('Error saving message:', err);
+    }
   });
 
-  socket.on('deleteForMe', async (messageId, username) => {
+  socket.on('deleteForMe', async ({ messageId, userId, roomId }) => {
     try {
-      const message = await Message.findById(messageId);
+      if (!roomId) return; // Prevent raw global exploitation
 
-      if (message && message.sender === username) {
-        await Message.deleteOne({ _id: messageId });
-        io.emit('messageDeletedForMe', { messageId, username });
+      // Push the userId into the deletedFor array of this document
+      const doc = await Message.findOneAndUpdate(
+        { _id: messageId, roomId },
+        { $addToSet: { deletedFor: userId } }
+      );
+
+      if (doc) {
+        socket.emit('messageDeletedForMe', { messageId });
       }
     } catch (err) {
-      console.log("Delete for me error:", err);
+      console.error("Delete for me error:", err);
     }
   });
 
-  socket.on('deleteForEveryone', async (messageId) => {
+  socket.on('deleteForEveryone', async ({ messageId, userId, roomId }) => {
     try {
-      await Message.deleteOne({ _id: messageId });
-      io.emit('messageDeletedForEveryone', { messageId });
+      const message = await Message.findById(messageId);
+      if (message && message.sender.equals(userId)) {
+        await Message.deleteOne({ _id: messageId });
+        io.to(roomId).emit('messageDeletedForEveryone', { messageId });
+      }
     } catch (err) {
-      console.log("Delete for everyone error:", err);
+      console.error("Delete for everyone error:", err);
     }
   });
 
-  socket.on('typing', (data) => {
-    socket.broadcast.emit('displayTyping', data);
+  socket.on('typing', ({ roomId, user }) => {
+    socket.to(roomId).emit('displayTyping', { user });
   });
 
   /* ================= WebRTC Signaling ================= */
@@ -118,18 +140,18 @@ io.on('connection', (socket) => {
   });
 
   // Callee answers: forward SDP answer back to the original caller
-  socket.on('video-answer', ({ to, answer }) => {
+  socket.on('video-answer', ({ to, from, answer }) => {
     const targetSocketId = socketUsers[to];
     if (targetSocketId) {
-      io.to(targetSocketId).emit('video-answer', { answer });
+      io.to(targetSocketId).emit('video-answer', { from, answer });
     }
   });
 
   // Relay ICE candidates between peers
-  socket.on('ice-candidate', ({ to, candidate }) => {
+  socket.on('ice-candidate', ({ to, from, candidate }) => {
     const targetSocketId = socketUsers[to];
     if (targetSocketId) {
-      io.to(targetSocketId).emit('ice-candidate', { candidate });
+      io.to(targetSocketId).emit('ice-candidate', { from, candidate });
     }
   });
 

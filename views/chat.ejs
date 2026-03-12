@@ -224,8 +224,9 @@
 <body>
 
     <div class="navbar">
-        <div class="heading">EchoChat</div>
+        <div class="heading"># <%= room.name %></div>
         <div style="display:flex;align-items:center;gap:6px;">
+            <a href="/lobby" class="toggle-btn" style="text-decoration:none;font-size:1rem;margin-right:10px;">Back</a>
             <!-- Video Call button -->
             <button id="videoCallBtn" onclick="startCall()" title="Start Video Call">📹</button>
             <button class="toggle-btn" id="themeToggle" onclick="toggleTheme()">☀️</button>
@@ -307,6 +308,11 @@
     <script>
         const socket = io();
         const currentUsername = "<%= username %>";
+        const currentUserId = "<%= userId %>";
+        const roomId = "<%= room._id %>";
+
+        // Join the socket room
+        socket.emit('join-room', roomId);
 
         function toggleTheme() {
             const body = document.body;
@@ -324,17 +330,17 @@
             const input = document.getElementById('messageInput');
             const message = input.value.trim();
             if (message) {
-                socket.emit('newMessage', { sender: currentUsername, text: message }); // Emit message to server
-                displayMessage(currentUsername, message, true); // Display locally
+                // Emit message to server, bound to roomId
+                socket.emit('newMessage', { roomId, sender: currentUserId, senderName: currentUsername, text: message }); 
                 input.value = '';
             }
         }
 
         socket.on('messageBroadcast', (data) => {
-            // Skip displaying the message if the sender is the current user
-            if (data.sender !== currentUsername) {
-                displayMessage(data.sender, data.text, false);
-            }
+            // Note: because we just push to the DOM, if it's our own message we still append it
+            // but the class differs.
+            const isSender = data.senderName === currentUsername;
+            displayMessage(data, isSender);
         });
 
         socket.on('messageDeletedForMe', (data) => {
@@ -353,11 +359,23 @@
             }
         });
 
-        function displayMessage(sender, text, isSender) {
+        function displayMessage(data, isSender) {
             const chatContainer = document.getElementById('chatContainer');
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', isSender ? 'sent' : 'received');
-            messageElement.innerHTML = isSender ? text : `<strong>${sender}:</strong> ${text}`;
+            messageElement.id = `message_${data._id}`;
+            messageElement.innerHTML = `
+                ${isSender ? data.text : `<strong>${data.senderName}:</strong> ${data.text}`}
+                
+                <button class="delete-btn" onclick="showDeleteOptions('${data._id}')">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+                <div class="delete-options">
+                    <button class="delete-for-me" onclick="deleteForMe('${data._id}')">Delete for Me</button>
+                    <button class="delete-for-everyone" onclick="deleteForEveryone('${data._id}')">Delete for Everyone</button>
+                    <button class="cancel" onclick="cancelDelete('${data._id}')">Cancel</button>
+                </div>
+            `;
             chatContainer.appendChild(messageElement);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
@@ -377,24 +395,18 @@
         }
 
         function deleteForMe(messageId) {
-            const messageElement = document.getElementById(`message_${messageId}`);
-            if (messageElement) {
-                messageElement.style.display = 'none'; // Hide the message for the current user
-            }
+            socket.emit('deleteForMe', { messageId, userId: currentUserId, roomId });
         }
 
         function deleteForEveryone(messageId) {
-            const messageElement = document.getElementById(`message_${messageId}`);
-            if (messageElement) {
-                messageElement.style.display = 'none'; // Hide the message for everyone
-            }
+            socket.emit('deleteForEveryone', { messageId, userId: currentUserId, roomId });
         }
 
         const messageInput = document.getElementById('messageInput');
         const typingNotification = document.getElementById('typingNotification');
 
         messageInput.addEventListener('input', () => {
-            socket.emit('typing', { user: currentUsername });
+            socket.emit('typing', { roomId, user: currentUsername });
         });
 
         socket.on('displayTyping', (data) => {
