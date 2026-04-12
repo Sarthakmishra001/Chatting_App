@@ -4,299 +4,560 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- WebRTC video call styles -->
+    <title>Chat – EchoChat</title>
+    <meta name="description" content="Real-time group chat room on EchoChat with video calling support.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="/css/videocall.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --bg-color: #ffffff;
-            --text-color: #000000;
-            --chat-bg: #e0f7fa;
-            --chat-text-color: #000000;
-            --sender-bg: #4caf50;
-            --sender-text-color: #ffffff;
-            --receiver-bg: #2196f3;
-            --receiver-text-color: #ffffff;
+            --purple: #7C3AED;
+            --blue: #4F8EF7;
+            --cyan: #00D4FF;
+            --pink: #F72585;
+            --green: #10B981;
+            --dark: #0D0E21;
+            --surface: #13142E;
+            --surface2: #1A1B3D;
+            --glass: rgba(255,255,255,0.06);
+            --glass-b: rgba(255,255,255,0.1);
+            --text: #F0F0FF;
+            --muted: #7B7BAF;
+            --sent-bg: linear-gradient(135deg, #7C3AED, #4F8EF7);
+            --recv-bg: rgba(255,255,255,0.07);
         }
 
-        [data-theme="dark"] {
-            --bg-color: #1a1a1a;
-            --text-color: #cb1818;
-            --chat-bg: #2a2a2a;
-            --chat-text-color: #d12323;
-            --sender-bg: #66bb6a;
-            --sender-text-color: #ffffff;
-            --receiver-bg: #1565c0;
-            --receiver-text-color: #ffffff;
+        /* LIGHT THEME */
+        [data-theme="light"] {
+            --dark: #F5F6FA;
+            --surface: #FFFFFF;
+            --surface2: #EEF0F8;
+            --glass: rgba(0,0,0,0.04);
+            --glass-b: rgba(0,0,0,0.1);
+            --text: #1A1B3D;
+            --muted: #8888AA;
+            --recv-bg: rgba(0,0,0,0.05);
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            transition: background-color 0.3s, color 0.3s;
+            font-family: 'Inter', sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            overflow: hidden;
+            transition: background 0.3s, color 0.3s;
         }
 
+        /* ===== NAV ===== */
         .navbar {
+            height: 60px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--glass-b);
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 12px 20px;
-            background-color: #4a90e2;
-            color: #fff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            justify-content: space-between;
+            padding: 0 16px;
+            flex-shrink: 0;
             position: relative;
-            z-index: 10;
+            z-index: 100;
         }
-
-        .heading {
-            font-size: 1.5rem;
-            font-weight: bold;
+        .nav-left { display: flex; align-items: center; gap: 10px; }
+        .nav-room-name {
+            font-size: 1rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--blue), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-
-        .toggle-btn {
+        .mobile-menu-btn {
+            display: none;
             background: none;
             border: none;
+            color: var(--text);
+            font-size: 1.2rem;
             cursor: pointer;
-            font-size: 1.5rem;
-            color: #fff;
+            padding: 6px;
+            border-radius: 8px;
+        }
+        @media (max-width: 768px) { .mobile-menu-btn { display: flex; align-items: center; } }
+
+        .nav-right { display: flex; align-items: center; gap: 8px; position: relative; }
+
+        .nav-btn {
+            background: var(--glass);
+            border: 1px solid var(--glass-b);
+            color: var(--text);
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .nav-btn:hover { background: rgba(79,142,247,0.15); transform: scale(1.07); }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 600;
+            padding: 6px 12px;
+            border: 1px solid var(--glass-b);
+            border-radius: 10px;
+            background: var(--glass);
+            transition: background 0.2s, color 0.2s;
+        }
+        .back-btn:hover { background: rgba(124,58,237,0.1); color: var(--purple); }
+
+        /* Room badge pill */
+        .room-pill {
+            background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(79,142,247,0.2));
+            border: 1px solid rgba(79,142,247,0.2);
+            border-radius: 99px;
+            padding: 4px 10px;
+            font-size: 0.72rem;
+            color: var(--cyan);
+            font-weight: 600;
         }
 
-        .chat-container {
+        /* Call dropdown */
+        .call-menu {
+            display: none;
+            position: absolute;
+            top: 48px;
+            right: 0;
+            background: var(--surface);
+            border: 1px solid var(--glass-b);
+            border-radius: 14px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.45);
+            width: 230px;
+            z-index: 999;
+            overflow: hidden;
+            animation: dropdown-in 0.2s ease;
+        }
+        @keyframes dropdown-in {
+            from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .call-menu.active { display: block; }
+        .call-menu-header {
+            padding: 12px 14px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--muted);
+            border-bottom: 1px solid var(--glass-b);
+            background: rgba(79,142,247,0.05);
+        }
+        .call-menu-item {
+            padding: 11px 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: background 0.15s;
+        }
+        .call-menu-item:hover { background: rgba(79,142,247,0.08); }
+        .call-member-list { max-height: 180px; overflow-y: auto; }
+        .status-dot-small {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--muted);
+            flex-shrink: 0;
+            transition: background 0.3s;
+        }
+
+        /* ===== MAIN WRAPPER ===== */
+        .main-wrapper {
             flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            background-color: var(--bg-color);
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .members-sidebar {
+            width: 220px;
+            background: var(--surface);
+            border-right: 1px solid var(--glass-b);
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            padding-top: 50px;
+            flex-shrink: 0;
+            transition: transform 0.3s ease-in-out;
+            z-index: 40;
         }
-
-        .message {
-            max-width: 60%;
-            width: fit-content;
-            padding: 10px 40px 10px 10px; /* Right padding prevents text from hiding under trashcan */
-            border-radius: 10px;
-            word-wrap: break-word;
-            font-size: 1rem;
-            position: relative;
-            display: inline-block;
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--glass-b);
         }
-
-        .sent {
-            align-self: flex-end;
-            background-color: var(--sender-bg);
-            color: var(--sender-text-color);
+        .sidebar-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--muted);
         }
-
-        .received {
-            align-self: flex-start;
-            background-color: var(--receiver-bg);
-            color: var(--receiver-text-color);
-        }
-
-        .input-container {
-            display: flex;
-            padding: 10px;
-            background-color: var(--bg-color);
-            border-top: 1px solid #ccc;
-        }
-
-        .input-container input {
+        .sidebar-body {
             flex: 1;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 20px;
-            font-size: 1rem;
-            outline: none;
+            overflow-y: auto;
+            padding: 12px;
         }
+        .sidebar-body::-webkit-scrollbar { width: 4px; }
+        .sidebar-body::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 
-        .input-container button {
-            margin-left: 10px;
-            padding: 10px;
-            background-color: #4caf50;
-            color: #fff;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-
-        .input-container button:hover {
-            background-color: #45a049;
-        }
-
-        .typing-notification {
-            font-size: 0.9rem;
-            color: rgb(208, 197, 197);
-            padding: 5px;
-            position: fixed;
-            top: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #fff;
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            width: auto;
-            max-width: 80%;
-            z-index: 5;
+            transition: background 0.2s;
+            margin-bottom: 2px;
+        }
+        .member-item:hover { background: var(--glass); }
+        .member-avatar {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--purple), var(--blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            position: relative;
+        }
+        .online-indicator {
+            position: absolute;
+            bottom: 0; right: 0;
+            width: 9px; height: 9px;
+            border-radius: 50%;
+            border: 2px solid var(--surface);
+            background: var(--muted);
+            transition: background 0.3s;
+        }
+        .member-name { font-size: 0.83rem; font-weight: 500; }
+        .you-tag {
+            font-size: 0.68rem;
+            color: var(--cyan);
+            font-weight: 600;
+        }
+
+        /* Mobile sidebar */
+        @media (max-width: 768px) {
+            .members-sidebar {
+                position: fixed;
+                left: 0; top: 60px; bottom: 0;
+                transform: translateX(-100%);
+            }
+            .members-sidebar.active { transform: translateX(0); }
+        }
+
+        /* Overlay */
+        .sidebar-overlay {
             display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 30;
+        }
+        .sidebar-overlay.active { display: block; }
+
+        /* ===== CHAT AREA ===== */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
         }
 
-        /* Hover effect for the delete button */
-        .message:hover .delete-btn {
-            opacity: 1;
-            visibility: visible;
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            scroll-behavior: smooth;
+        }
+        .chat-messages::-webkit-scrollbar { width: 5px; }
+        .chat-messages::-webkit-scrollbar-track { background: transparent; }
+        .chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 5px; }
+
+        /* ===== MESSAGES ===== */
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 70%;
+            position: relative;
+        }
+        @media (max-width: 600px) { .message { max-width: 88%; } }
+        .message.sent { align-self: flex-end; align-items: flex-end; }
+        .message.received { align-self: flex-start; align-items: flex-start; }
+
+        .msg-sender-name {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--cyan);
+            margin-bottom: 3px;
+            padding: 0 4px;
+        }
+        .msg-bubble {
+            padding: 10px 14px;
+            border-radius: 18px;
+            word-break: break-word;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            position: relative;
+        }
+        .sent .msg-bubble {
+            background: var(--sent-bg);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 16px rgba(124,58,237,0.35);
+        }
+        .received .msg-bubble {
+            background: var(--recv-bg);
+            border: 1px solid var(--glass-b);
+            color: var(--text);
+            border-bottom-left-radius: 4px;
+        }
+        .msg-deleted {
+            font-style: italic;
+            color: var(--muted) !important;
+            font-size: 0.82rem;
         }
 
+        /* Delete btn */
         .delete-btn {
             position: absolute;
-            top: 8px;
-            right: 8px;
-            background: transparent;
+            top: 6px; right: 8px;
+            background: none;
             border: none;
-            color: #ff0000;
-            font-size: 1.1rem; /* Smaller icon */
+            color: rgba(255,255,255,0.5);
+            font-size: 0.75rem;
+            cursor: pointer;
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.2s ease-in-out;
-            cursor: pointer;
+            transition: opacity 0.2s;
+            z-index: 2;
         }
+        .message:hover .delete-btn { opacity: 1; visibility: visible; }
+        .received .delete-btn { color: var(--muted); }
 
+        /* Delete dropdown */
         .delete-options {
             display: none;
             position: absolute;
-            top: 30px;
-            right: 5px;
-            background: #ffffff;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            width: 160px;
+            top: calc(100% + 5px);
+            right: 0;
+            background: var(--surface);
+            border: 1px solid var(--glass-b);
+            border-radius: 12px;
+            box-shadow: 0 10px 32px rgba(0,0,0,0.4);
+            width: 175px;
             z-index: 999;
+            overflow: hidden;
+            animation: dropdown-in 0.2s ease;
         }
-
+        .message.show-options .delete-options { display: block; }
+        .message.show-options .delete-btn { visibility: hidden; }
         .delete-options button {
             width: 100%;
-            padding: 10px;
+            padding: 10px 14px;
             border: none;
-            background-color: #f5f5f5;
+            background: none;
             cursor: pointer;
-            border-radius: 8px;
-            text-align: left;
+            font-size: 0.83rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Inter', sans-serif;
+            transition: background 0.15s;
+            color: var(--text);
+        }
+        .delete-options button:hover { background: var(--glass); }
+        .delete-options .delete-for-me { color: #FF9500; }
+        .delete-options .delete-for-everyone { color: var(--pink); }
+        .delete-options .cancel { color: var(--green); }
+
+        /* Date separator */
+        .date-sep {
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.72rem;
+            font-weight: 500;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .date-sep::before, .date-sep::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--glass-b);
         }
 
-        .delete-options button:hover {
-            background-color: #efefef;
+        /* ===== TYPING INDICATOR ===== */
+        .typing-indicator {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface);
+            border: 1px solid var(--glass-b);
+            border-radius: 99px;
+            padding: 5px 14px;
+            font-size: 0.75rem;
+            color: var(--cyan);
+            font-weight: 500;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+            z-index: 10;
+            white-space: nowrap;
+        }
+        .typing-dots span {
+            display: inline-block;
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: var(--cyan);
+            animation: bounce 1.2s infinite;
+        }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
         }
 
-        .delete-options button.delete-for-me,
-        .delete-options button.delete-for-everyone {
-            color: #ff0000;
-            /* Red text for "Delete for Me" and "Delete for Everyone" */
+        /* ===== INPUT BAR ===== */
+        .input-bar {
+            padding: 12px 16px;
+            background: var(--surface);
+            border-top: 1px solid var(--glass-b);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .input-bar input {
+            flex: 1;
+            background: var(--glass);
+            border: 1px solid var(--glass-b);
+            border-radius: 24px;
+            padding: 10px 18px;
+            color: var(--text);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+        .input-bar input::placeholder { color: var(--muted); }
+        .input-bar input:focus {
+            border-color: var(--purple);
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.18);
+        }
+        .send-btn {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--purple), var(--blue));
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 16px rgba(124,58,237,0.4);
+            flex-shrink: 0;
+        }
+        .send-btn:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(124,58,237,0.55); }
+        .send-btn:active { transform: scale(0.95); }
+
+        /* ===== VIDEO CALL MODAL OVERRIDES ===== */
+        #videoCallModal {
+            font-family: 'Inter', sans-serif;
+        }
+        #incomingCallBanner {
+            font-family: 'Inter', sans-serif;
+            border-radius: 16px !important;
         }
 
-        .delete-options button.cancel {
-            color: #28a745;
-            /* Green text for "Cancel" */
+        /* ===== Message in-animation ===== */
+        @keyframes msg-in-right {
+            from { opacity: 0; transform: translateX(20px); }
+            to   { opacity: 1; transform: translateX(0); }
         }
-
-        /* Show the delete options */
-        .message.show-options .delete-options {
-            display: block;
+        @keyframes msg-in-left {
+            from { opacity: 0; transform: translateX(-20px); }
+            to   { opacity: 1; transform: translateX(0); }
         }
-
-        .message.show-options .delete-btn {
-            visibility: hidden;
-        }
+        .msg-new-sent { animation: msg-in-right 0.3s ease; }
+        .msg-new-recv { animation: msg-in-left 0.3s ease; }
     </style>
-
 </head>
 
 <body>
 
-    <!-- CSS for the Call Dropdown Menu -->
-    <style>
-        .call-menu {
-            display: none;
-            position: absolute;
-            top: 50px;
-            right: 60px;
-            background: #ffffff;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            width: 220px;
-            z-index: 999;
-            color: #333;
-        }
-
-        .call-menu.active {
-            display: block;
-        }
-
-        .call-menu-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-        }
-
-        .call-menu-item:hover {
-            background-color: #f0f0f0;
-        }
-        
-        .call-menu-item:last-child {
-            border-bottom: none;
-        }
-
-        .call-member-list {
-            max-height: 150px;
-            overflow-y: auto;
-            border-top: 1px solid #ccc;
-        }
-    </style>
-
-    <div class="navbar sticky top-0 z-50">
-        <div class="flex items-center gap-2">
-            <button id="mobileSidebarToggle" class="md:hidden text-white text-xl p-1" onclick="toggleMobileSidebar()">☰</button>
-            <div class="heading truncate max-w-[150px] sm:max-w-none"># <%= room.name %></div>
+    <!-- NAVBAR -->
+    <div class="navbar">
+        <div class="nav-left">
+            <button class="mobile-menu-btn" id="mobileSidebarToggle" onclick="toggleMobileSidebar()" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div>
+                <div class="nav-room-name"># <%= room.name %></div>
+            </div>
+            <span class="room-pill"><%= room.members.length %> members</span>
         </div>
-        <div style="display:flex;align-items:center;gap:6px; position:relative;">
-            <a href="/lobby" class="toggle-btn" style="text-decoration:none;font-size:0.9rem;margin-right:10px;">Back</a>
-            
-            <!-- Video Call Toggle -->
-            <button id="videoCallBtn" onclick="toggleCallMenu()" title="Start Video Call" class="p-2 hover:bg-blue-600 rounded-full transition">📹</button>
-            <button class="toggle-btn p-2 hover:bg-blue-600 rounded-full transition" id="themeToggle" onclick="toggleTheme()">☀️</button>
-            
-            <!-- Dropdown Menu -->
-            <div id="callDropdown" class="call-menu right-0 md:right-[60px]">
-                <div class="call-menu-item" style="font-weight: bold;" onclick="callAllMembers()">
-                    📞 Call All Members
+
+        <div class="nav-right">
+            <a href="/lobby" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                <span class="back-label">Lobby</span>
+            </a>
+
+            <!-- Video Call Button -->
+            <button id="videoCallBtn" onclick="toggleCallMenu()" class="nav-btn" title="Start Video Call">
+                <i class="fas fa-video"></i>
+            </button>
+
+            <!-- Theme Toggle -->
+            <button class="nav-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle Theme">
+                <i class="fas fa-moon" id="themeIcon"></i>
+            </button>
+
+            <!-- Call Dropdown -->
+            <div id="callDropdown" class="call-menu">
+                <div class="call-menu-header">📹 Start a Video Call</div>
+                <div class="call-menu-item" style="font-weight:700; border-bottom:1px solid var(--glass-b);" onclick="callAllMembers()">
+                    <i class="fas fa-users" style="color:var(--cyan);"></i> Call All Members
                 </div>
-                <div style="padding: 8px 10px; font-size: 0.85rem; background: #e0f7fa; color: #00796b;">
-                    Select Member to Call
-                </div>
+                <div class="call-menu-header" style="margin-top:0;">Select Member</div>
                 <div class="call-member-list">
                     <% room.members.forEach(member => { %>
                         <% if(member._id.toString() !== userId) { %>
-                            <div class="call-menu-item" onclick="startCall('<%= member.username %>')">
-                                <span id="call-dot-<%= member._id %>" style="width: 8px; height: 8px; border-radius: 50%; background-color: #9ca3af; margin-right: 8px;"></span>
-                                <%= member.username %>
-                            </div>
+                        <div class="call-menu-item" onclick="startCall('<%= member.username %>')">
+                            <span id="call-dot-<%= member._id %>" class="status-dot-small"></span>
+                            <%= member.username %>
+                        </div>
                         <% } %>
                     <% }) %>
                 </div>
@@ -304,143 +565,98 @@
         </div>
     </div>
 
-    <!-- Main Layout wrapper for Chat and Sidebar -->
-    <div style="display: flex; flex: 1; overflow: hidden; position: relative;">
-        
-        <!-- Sidebar: Online Members (Responsive) -->
+    <!-- MAIN WRAPPER -->
+    <div class="main-wrapper">
+
+        <!-- SIDEBAR -->
         <div id="membersSidebar" class="members-sidebar">
-            <h3 style="font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Members</h3>
-            <ul id="membersList" style="list-style: none; padding: 0;">
+            <div class="sidebar-header">
+                <div class="sidebar-title"><i class="fas fa-users" style="color:var(--cyan);margin-right:6px;"></i> Members</div>
+            </div>
+            <div class="sidebar-body">
                 <% room.members.forEach(member => { %>
-                    <li style="display: flex; align-items: center; margin-bottom: 12px;">
-                        <span id="status-dot-<%= member._id %>" style="width: 10px; height: 10px; border-radius: 50%; background-color: #9ca3af; margin-right: 10px; transition: background-color 0.3s;"></span>
-                        <span class="truncate"><%= member.username %> <%= member._id.toString() === userId ? '(You)' : '' %></span>
-                    </li>
+                <div class="member-item">
+                    <div class="member-avatar">
+                        <%= member.username.charAt(0).toUpperCase() %>
+                        <span id="status-dot-<%= member._id %>" class="online-indicator"></span>
+                    </div>
+                    <div>
+                        <div class="member-name"><%= member.username %></div>
+                        <% if (member._id.toString() === userId) { %>
+                        <div class="you-tag">You</div>
+                        <% } %>
+                    </div>
+                </div>
                 <% }) %>
-            </ul>
+            </div>
         </div>
 
-        <!-- Overlay for mobile sidebar -->
-        <div id="sidebarOverlay" class="fixed inset-0 bg-black opacity-50 z-30 hidden md:hidden" onclick="toggleMobileSidebar()"></div>
-        
-        <!-- Center Chat Application -->
-        <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;" class="w-full">
-            <div class="chat-container" id="chatContainer" style="padding-top: 15px;">
-        <% messages.forEach(message => { %>
-            <div class="message <%= message.sender.toString() === userId ? 'sent' : 'received' %> w-fit max-w-[85%] md:max-w-[70%]"
-                 id="message_<%= message._id %>">
-                
-                <% if (message.deletedForEveryone) { %>
-                    <i style="color: #666; font-size: 0.9rem;">This message was deleted</i>
-                <% } else { %>
-                    <div class="text-sm font-medium mb-1 opacity-80">
-                        <%= message.sender.toString() === userId ? 'You' : message.senderName %>
-                    </div>
-                    <div><%= message.text %></div>
+        <!-- Overlay -->
+        <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
-                    <!-- Delete Icon (visible on hover) -->
-                    <button class="delete-btn" onclick="showDeleteOptions('<%= message._id %>')">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-
-                    <!-- Delete Options Dropdown -->
-                    <div class="delete-options">
-                        <button class="delete-for-me" onclick="deleteForMe('<%= message._id %>')">Delete for Me</button>
-                        <% if (message.sender.toString() === userId) { %>
-                            <button class="delete-for-everyone" onclick="deleteForEveryone('<%= message._id %>')">Delete for Everyone</button>
-                        <% } %>
-                        <button class="cancel" onclick="cancelDelete('<%= message._id %>')">Cancel</button>
-                    </div>
-                <% } %>
+        <!-- CHAT AREA -->
+        <div class="chat-area">
+            <!-- Typing indicator -->
+            <div id="typingNotification" class="typing-indicator">
+                <div class="typing-dots"><span></span><span></span><span></span></div>
+                <span id="typingText">Someone is typing...</span>
             </div>
-        <% }) %>
+
+            <!-- Messages -->
+            <div class="chat-messages" id="chatContainer">
+                <% messages.forEach(message => { %>
+                <div class="message <%= message.sender.toString() === userId ? 'sent' : 'received' %>" id="message_<%= message._id %>">
+
+                    <% if (message.deletedForEveryone) { %>
+                    <div class="msg-bubble">
+                        <span class="msg-deleted"><i class="fas fa-ban" style="font-size:0.7rem;margin-right:4px;"></i>This message was deleted</span>
+                    </div>
+                    <% } else { %>
+                        <% if (message.sender.toString() !== userId) { %>
+                        <div class="msg-sender-name"><%= message.senderName %></div>
+                        <% } %>
+                        <div class="msg-bubble">
+                            <%= message.text %>
+                            <button class="delete-btn" onclick="showDeleteOptions('<%= message._id %>')">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="delete-options">
+                                <button class="delete-for-me" onclick="deleteForMe('<%= message._id %>')">
+                                    <i class="fas fa-user-times"></i> Delete for Me
+                                </button>
+                                <% if (message.sender.toString() === userId) { %>
+                                <button class="delete-for-everyone" onclick="deleteForEveryone('<%= message._id %>')">
+                                    <i class="fas fa-trash"></i> Delete for Everyone
+                                </button>
+                                <% } %>
+                                <button class="cancel" onclick="cancelDelete('<%= message._id %>')">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+                <% }) %>
+            </div>
+
+            <!-- Input Bar -->
+            <div class="input-bar">
+                <input type="text" id="messageInput" placeholder="Type a message..." maxlength="200" autocomplete="off">
+                <button onclick="sendMessage()" class="send-btn" id="send-btn" aria-label="Send message">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
     </div>
 
-    <div id="typingNotification" class="typing-notification text-xs md:text-sm">Someone is typing...</div>
-
-    <div class="input-container p-2 sm:p-4 gap-2">
-        <input type="text" id="messageInput" placeholder="Type a message..." maxlength="200" class="flex-1 px-4 py-2 border rounded-full focus:ring-2 focus:ring-blue-400 outline-none">
-        <button onclick="sendMessage()" class="bg-blue-500 hover:bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center transition shadow-md">
-            <i class="fas fa-paper-plane"></i>
-        </button>
-    </div>
-    
-    <style>
-        .members-sidebar {
-            width: 250px;
-            background-color: var(--bg-color);
-            border-right: 1px solid #ccc;
-            overflow-y: auto;
-            padding: 20px;
-            transition: transform 0.3s ease-in-out;
-            z-index: 40;
-        }
-
-        @media (max-width: 768px) {
-            .members-sidebar {
-                position: fixed;
-                left: 0;
-                top: 60px;
-                bottom: 0;
-                transform: translateX(-100%);
-            }
-            .members-sidebar.active {
-                transform: translateX(0);
-            }
-        }
-
-        .chat-container {
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .message {
-            border-radius: 18px;
-            padding: 8px 14px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        }
-
-        .sent {
-            border-bottom-right-radius: 4px;
-        }
-
-        .received {
-            border-bottom-left-radius: 4px;
-        }
-    </style>
-
-    <script>
-        function toggleMobileSidebar() {
-            const sidebar = document.getElementById('membersSidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('hidden');
-        }
-    </script>
-  </div>
-    
-    <!-- End Right Chat Wrapper -->
-    </div>
-
-    <!-- ===== Video Call Modal ===== -->
+    <!-- ===== VIDEO CALL MODAL ===== -->
     <div id="videoCallModal">
         <div class="video-grid">
-            <!-- Remote video (full size) -->
             <video id="remoteVideo" autoplay playsinline></video>
-
-            <!-- Waiting label before remote stream connects -->
             <div id="remoteWaiting" style="display:flex;">Waiting for remote video…</div>
-
-            <!-- Local video (picture-in-picture) -->
             <video id="localVideo" autoplay playsinline muted></video>
-
-            <!-- Camera-off placeholder instead of local video -->
             <div id="localVideoOff">🚫</div>
         </div>
-
-        <!-- Call controls -->
         <div class="call-controls">
             <button class="ctrl-btn" id="muteBtn" onclick="toggleMute()" title="Mute">
                 <i class="fas fa-microphone"></i>
@@ -448,15 +664,14 @@
             <button class="ctrl-btn" id="endCallBtn" onclick="endCall()" title="End Call">
                 <i class="fas fa-phone-slash"></i>
             </button>
-            <button class="ctrl-btn" id="cameraBtn" onclick="toggleCamera()" title="Turn Camera Off">
+            <button class="ctrl-btn" id="cameraBtn" onclick="toggleCamera()" title="Camera">
                 <i class="fas fa-video"></i>
             </button>
         </div>
-
         <p id="callStatusLabel"></p>
     </div>
 
-    <!-- ===== Incoming Call Banner ===== -->
+    <!-- ===== INCOMING CALL BANNER ===== -->
     <div id="incomingCallBanner">
         <p id="incomingCallerText">Incoming call…</p>
         <div class="banner-actions">
@@ -472,162 +687,168 @@
         const currentUserId = "<%= userId %>";
         const roomId = "<%= room._id %>";
 
-        // Join the socket room
         socket.emit('join-room', roomId);
-        
-        // Register online status
         socket.emit('register-user-status', currentUserId);
-
-        // Fetch all current online users
         socket.emit('get-online-status');
-        
+
+        // ===== ONLINE STATUS =====
         socket.on('online-status-sync', (activeUserIds) => {
             activeUserIds.forEach(id => {
-                const dot1 = document.getElementById(`status-dot-${id}`);
-                const dot2 = document.getElementById(`call-dot-${id}`);
-                if (dot1) dot1.style.backgroundColor = '#10b981'; // Green
-                if (dot2) dot2.style.backgroundColor = '#10b981';
+                updateStatusDot(id, 'online');
             });
         });
-
         socket.on('user-status-changed', ({ userId, status }) => {
-            const dot1 = document.getElementById(`status-dot-${userId}`);
-            const dot2 = document.getElementById(`call-dot-${userId}`);
-            const color = status === 'online' ? '#10b981' : '#9ca3af';
-            if (dot1) dot1.style.backgroundColor = color;
-            if (dot2) dot2.style.backgroundColor = color;
+            updateStatusDot(userId, status);
         });
-
-        // Dropdown Toggle logic
-        function toggleCallMenu() {
-            const menu = document.getElementById('callDropdown');
-            menu.classList.toggle('active');
+        function updateStatusDot(id, status) {
+            const color = status === 'online' ? '#10B981' : '#6B6B9B';
+            const d1 = document.getElementById(`status-dot-${id}`);
+            const d2 = document.getElementById(`call-dot-${id}`);
+            if (d1) d1.style.background = color;
+            if (d2) d2.style.background = color;
         }
 
+        // ===== THEME =====
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.getElementById('themeIcon');
+            if (body.getAttribute('data-theme') === 'light') {
+                body.removeAttribute('data-theme');
+                icon.className = 'fas fa-moon';
+            } else {
+                body.setAttribute('data-theme', 'light');
+                icon.className = 'fas fa-sun';
+            }
+        }
+
+        // ===== SIDEBAR =====
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('membersSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        // ===== CALL DROPDOWN =====
+        function toggleCallMenu() {
+            document.getElementById('callDropdown').classList.toggle('active');
+        }
         function callAllMembers() {
-            alert("Mesh WebRTC 'Call All Members' feature is currently in development! Please select a specific user to call 1-on-1.");
+            alert("Mesh WebRTC 'Call All Members' is in development. Please select a specific user to call 1-on-1.");
             toggleCallMenu();
         }
-
-        // Hide dropdown if clicked outside
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', (e) => {
             const menu = document.getElementById('callDropdown');
             const btn = document.getElementById('videoCallBtn');
-            if (menu.classList.contains('active') && !menu.contains(event.target) && event.target !== btn) {
+            if (menu.classList.contains('active') && !menu.contains(e.target) && e.target !== btn) {
                 menu.classList.remove('active');
             }
         });
 
-        function toggleTheme() {
-            const body = document.body;
-            const toggleBtn = document.getElementById('themeToggle');
-            if (body.getAttribute('data-theme') === 'dark') {
-                body.removeAttribute('data-theme');
-                toggleBtn.innerHTML = '☀️';
-            } else {
-                body.setAttribute('data-theme', 'dark');
-                toggleBtn.innerHTML = '🌙';
-            }
-        }
-
+        // ===== MESSAGING =====
         function sendMessage() {
             const input = document.getElementById('messageInput');
             const message = input.value.trim();
             if (message) {
-                // Emit message to server, bound to roomId
-                socket.emit('newMessage', { roomId, sender: currentUserId, senderName: currentUsername, text: message }); 
+                socket.emit('newMessage', { roomId, sender: currentUserId, senderName: currentUsername, text: message });
                 input.value = '';
+                input.focus();
             }
         }
 
         socket.on('messageBroadcast', (data) => {
-            // Note: because we just push to the DOM, if it's our own message we still append it
-            // but the class differs.
             const isSender = data.senderName === currentUsername;
             displayMessage(data, isSender);
         });
 
-        socket.on('messageDeletedForMe', (data) => {
-            if (data.username === currentUsername) {
-                const messageElement = document.getElementById(`message_${data.messageId}`);
-                if (messageElement) {
-                    messageElement.style.display = 'none';
-                }
-            }
-        });
-
-        socket.on('messageDeletedForEveryone', (data) => {
-            const messageElement = document.getElementById(`message_${data.messageId}`);
-            if (messageElement) {
-                messageElement.innerHTML = `<i style="color: #666;">This message was deleted</i>`;
-            }
-        });
-
         function displayMessage(data, isSender) {
             const chatContainer = document.getElementById('chatContainer');
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', isSender ? 'sent' : 'received');
-            messageElement.id = `message_${data._id}`;
-            messageElement.innerHTML = `
-                ${isSender ? data.text : `<strong>${data.senderName}:</strong> ${data.text}`}
-                
-                <button class="delete-btn" onclick="showDeleteOptions('${data._id}')">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-                <div class="delete-options">
-                    <button class="delete-for-me" onclick="deleteForMe('${data._id}')">Delete for Me</button>
-                    <button class="delete-for-everyone" onclick="deleteForEveryone('${data._id}')">Delete for Everyone</button>
-                    <button class="cancel" onclick="cancelDelete('${data._id}')">Cancel</button>
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('message', isSender ? 'sent' : 'received', isSender ? 'msg-new-sent' : 'msg-new-recv');
+            wrapper.id = `message_${data._id}`;
+            wrapper.innerHTML = `
+                ${!isSender ? `<div class="msg-sender-name">${data.senderName}</div>` : ''}
+                <div class="msg-bubble">
+                    ${data.text}
+                    <button class="delete-btn" onclick="showDeleteOptions('${data._id}')">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <div class="delete-options">
+                        <button class="delete-for-me" onclick="deleteForMe('${data._id}')">
+                            <i class="fas fa-user-times"></i> Delete for Me
+                        </button>
+                        ${isSender ? `<button class="delete-for-everyone" onclick="deleteForEveryone('${data._id}')">
+                            <i class="fas fa-trash"></i> Delete for Everyone
+                        </button>` : ''}
+                        <button class="cancel" onclick="cancelDelete('${data._id}')">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
                 </div>
             `;
-            chatContainer.appendChild(messageElement);
+            chatContainer.appendChild(wrapper);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        function showDeleteOptions(messageId) {
-            const messageElement = document.getElementById(`message_${messageId}`);
-            if (messageElement) {
-                messageElement.classList.add('show-options');
+        // Delete handlers
+        socket.on('messageDeletedForMe', (data) => {
+            if (data.username === currentUsername) {
+                const el = document.getElementById(`message_${data.messageId}`);
+                if (el) { el.style.opacity = '0'; el.style.transform = 'scale(0.8)'; el.style.transition = 'all 0.3s'; setTimeout(() => el.remove(), 300); }
             }
+        });
+        socket.on('messageDeletedForEveryone', (data) => {
+            const el = document.getElementById(`message_${data.messageId}`);
+            if (el) el.innerHTML = `<div class="msg-bubble"><span class="msg-deleted"><i class="fas fa-ban" style="font-size:0.7rem;margin-right:4px;"></i>This message was deleted</span></div>`;
+        });
+
+        function showDeleteOptions(msgId) {
+            document.getElementById(`message_${msgId}`)?.classList.add('show-options');
+        }
+        function cancelDelete(msgId) {
+            document.getElementById(`message_${msgId}`)?.classList.remove('show-options');
+        }
+        function deleteForMe(msgId) {
+            socket.emit('deleteForMe', { messageId: msgId, userId: currentUserId, roomId });
+            cancelDelete(msgId);
+        }
+        function deleteForEveryone(msgId) {
+            socket.emit('deleteForEveryone', { messageId: msgId, userId: currentUserId, roomId });
+            cancelDelete(msgId);
         }
 
-        function cancelDelete(messageId) {
-            const messageElement = document.getElementById(`message_${messageId}`);
-            if (messageElement) {
-                messageElement.classList.remove('show-options');
+        // Close delete dropdowns on outside click
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.message')) {
+                document.querySelectorAll('.message.show-options').forEach(m => m.classList.remove('show-options'));
             }
-        }
+        });
 
-        function deleteForMe(messageId) {
-            socket.emit('deleteForMe', { messageId, userId: currentUserId, roomId });
-        }
-
-        function deleteForEveryone(messageId) {
-            socket.emit('deleteForEveryone', { messageId, userId: currentUserId, roomId });
-        }
-
+        // ===== TYPING =====
         const messageInput = document.getElementById('messageInput');
         const typingNotification = document.getElementById('typingNotification');
+        const typingText = document.getElementById('typingText');
 
         messageInput.addEventListener('input', () => {
             socket.emit('typing', { roomId, user: currentUsername });
         });
-
         socket.on('displayTyping', (data) => {
-            typingNotification.style.display = 'block';
-            typingNotification.innerHTML = `${data.user} is typing...`;
-            setTimeout(() => {
+            typingText.textContent = `${data.user} is typing...`;
+            typingNotification.style.display = 'flex';
+            clearTimeout(typingNotification._timeout);
+            typingNotification._timeout = setTimeout(() => {
                 typingNotification.style.display = 'none';
-            }, 1000);
+            }, 1500);
         });
 
-        messageInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
         });
+
+        // Scroll to bottom on load
+        const chatContainer = document.getElementById('chatContainer');
+        chatContainer.scrollTop = chatContainer.scrollHeight;
     </script>
-    <!-- WebRTC module — loaded after socket & currentUsername are defined -->
     <script src="/js/webrtc.js"></script>
 </body>
 

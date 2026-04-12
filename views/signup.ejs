@@ -1,124 +1,366 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Signup</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>Sign Up – EchoChat</title>
+    <meta name="description" content="Create your EchoChat account and start real-time chatting with groups.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        /* Custom Styles */
-        body.light-mode {
-            background-color: #f3f4f6;
-            color: #1f2937;
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --purple: #7C3AED;
+            --blue: #4F8EF7;
+            --cyan: #00D4FF;
+            --pink: #F72585;
+            --dark: #0D0E21;
+            --glass: rgba(255,255,255,0.07);
+            --glass-border: rgba(255,255,255,0.14);
+            --text: #F0F0FF;
+            --muted: #9B9BC8;
         }
 
-        body.dark-mode {
-            background-color: #26303d;
-            color: #f3f4f6;
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: var(--dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 20px;
         }
 
-        .dark-mode .bg-white {
-            background-color: #2b3f5e !important;
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.45;
+            animation: drift 12s ease-in-out infinite alternate;
+        }
+        .blob-1 { width: 500px; height: 500px; background: radial-gradient(circle, #7C3AED, #F72585); top: -150px; right: -100px; animation-duration: 14s; }
+        .blob-2 { width: 380px; height: 380px; background: radial-gradient(circle, #00D4FF, #4F8EF7); bottom: -80px; left: -80px; animation-duration: 10s; animation-delay: 2s; }
+        .blob-3 { width: 260px; height: 260px; background: radial-gradient(circle, #F72585, #7C3AED); top: 50%; left: 20%; animation-duration: 16s; animation-delay: 1s; }
+
+        @keyframes drift {
+            from { transform: translate(0,0) scale(1); }
+            to   { transform: translate(35px, 25px) scale(1.08); }
         }
 
-        .dark-mode .text-black {
-            color: #f3f4f6 !important;
+        .particles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.35);
+            animation: float-up linear infinite;
+        }
+        @keyframes float-up {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 0.5; }
+            100% { transform: translateY(-20px) scale(1); opacity: 0; }
         }
 
-        .dark-mode .border {
-            border-color: #6fabff !important;
+        .card {
+            position: relative;
+            z-index: 10;
+            background: var(--glass);
+            backdrop-filter: blur(28px) saturate(180%);
+            -webkit-backdrop-filter: blur(28px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px 38px;
+            width: min(460px, 100%);
+            box-shadow: 0 24px 64px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+            animation: card-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+        @keyframes card-in {
+            from { opacity: 0; transform: translateY(40px) scale(0.95); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        .dark-mode input {
-            background-color: #1f2937;
-            color: #f3f4f6;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+        .brand img.logo-img {
+            width: 48px; height: 48px;
+            border-radius: 14px;
+            object-fit: cover;
+            box-shadow: 0 8px 24px rgba(124,58,237,0.45);
+        }
+        .brand-name {
+            font-size: 1.65rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--pink), var(--purple), var(--blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .dark-mode input:focus {
-            border-color: #3b82f6;
+        h2 {
+            color: var(--text);
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: var(--muted);
+            font-size: 0.83rem;
+            text-align: center;
+            margin-bottom: 26px;
         }
 
-        .dark-mode button {
-            background-color: #3142ff;
-            color: #f3f4f6;
+        .field { margin-bottom: 16px; }
+        .field label {
+            display: block;
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 7px;
+        }
+        .input-wrap { position: relative; }
+        .input-wrap .icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 0.88rem;
+            pointer-events: none;
+            transition: color 0.25s;
+        }
+        .input-wrap .eye-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 0.88rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.25s;
+        }
+        .input-wrap .eye-toggle:hover { color: var(--blue); }
+        .field input {
+            width: 100%;
+            padding: 12px 40px 12px 40px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 0.94rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+        }
+        .field input::placeholder { color: rgba(255,255,255,0.25); }
+        .field input:focus {
+            border-color: var(--purple);
+            background: rgba(124,58,237,0.08);
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.18);
         }
 
-        .dark-mode button:hover {
-            background-color: #4b5563;
+        .error-box {
+            background: rgba(247, 37, 133, 0.12);
+            border: 1px solid rgba(247, 37, 133, 0.3);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: #ff6ba8;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .dark-mode .eye-icon {
-            stroke: #f3f4f6;
+        /* Password strength */
+        .strength-bar {
+            margin-top: 6px;
+            height: 3px;
+            border-radius: 99px;
+            background: rgba(255,255,255,0.08);
+            overflow: hidden;
         }
+        .strength-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 0.4s, background 0.4s;
+            width: 0;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, var(--pink), var(--purple), var(--blue));
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 8px 24px rgba(247,37,133,0.35);
+            letter-spacing: 0.02em;
+            margin-top: 6px;
+        }
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(247,37,133,0.5);
+        }
+        button[type="submit"]:active { transform: translateY(0); }
+
+        .footer-link {
+            color: var(--muted);
+            font-size: 0.85rem;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .footer-link a {
+            color: var(--cyan);
+            font-weight: 600;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        .footer-link a:hover { opacity: 0.8; }
+
+        /* Feature pills */
+        .features {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+        .pill {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 99px;
+            padding: 4px 12px;
+            font-size: 0.74rem;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .pill i { font-size: 0.7rem; }
     </style>
 </head>
+<body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="particles" id="particles"></div>
 
-<body class="flex items-center justify-center min-h-screen bg-gray-100 light-mode p-4">
-    <div id="card" class="bg-white w-full max-w-md p-6 rounded-lg shadow-lg transition duration-300">
-        <h2 class="text-2xl font-bold mb-4">Signup</h2>
-        <% if (typeof error !=='undefined' ) { %>
-            <p class="error-message text-red-500">
-                <%= error %>
-            </p>
-            <% } %>
-                <form action="/signup" method="POST" class="space-y-4">
-                    <div>
-                        <label for="username" class="block font-bold">Username</label>
-                        <input type="text" id="username" name="username" required
-                            class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label for="email" class="block font-bold">Email</label>
-                        <input type="email" id="email" name="email" required
-                            class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div class="relative">
-                        <label for="password" class="block font-bold">Password</label>
-                        <div class="relative">
-                            <input type="password" id="password" name="password" required
-                                class="w-full p-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <span id="togglePassword"
-                                class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
-                                <svg id="eyeIcon" class="eye-icon w-6 h-6" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M2.458 12C3.732 7.943 7.522 5 12 5c4.478 0 8.268 2.943 9.542 7-.274.806-.65 1.57-1.115 2.267m-2.122 2.122A9.956 9.956 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 011.115-2.267m2.122-2.122A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.542 7z">
-                                    </path>
-                                </svg>
-                            </span>
-                        </div>
-                    </div>
-                    <button type="submit"
-                        class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow transition">
-                        Sign Up
+    <div class="card">
+        <div class="brand">
+            <img src="/img/icon.png" alt="EchoChat" class="logo-img">
+            <span class="brand-name">EchoChat</span>
+        </div>
+
+        <h2>Create Your Account ✨</h2>
+        <p class="subtitle">Join thousands of people chatting right now</p>
+
+        <div class="features">
+            <span class="pill"><i class="fas fa-video"></i> Video Calls</span>
+            <span class="pill"><i class="fas fa-comments"></i> Group Chat</span>
+            <span class="pill"><i class="fas fa-bolt"></i> Real-time</span>
+        </div>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+        <div class="error-box">
+            <i class="fas fa-exclamation-circle"></i>
+            <%= error %>
+        </div>
+        <% } %>
+
+        <form action="/signup" method="POST" id="signupForm">
+            <div class="field">
+                <label for="username">Username</label>
+                <div class="input-wrap">
+                    <input type="text" id="username" name="username" required placeholder="cooluser123" autocomplete="username">
+                    <i class="fas fa-user icon"></i>
+                </div>
+            </div>
+            <div class="field">
+                <label for="email">Email Address</label>
+                <div class="input-wrap">
+                    <input type="email" id="email" name="email" required placeholder="you@example.com" autocomplete="email">
+                    <i class="fas fa-envelope icon"></i>
+                </div>
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <div class="input-wrap">
+                    <input type="password" id="password" name="password" required placeholder="Min. 6 characters" autocomplete="new-password">
+                    <i class="fas fa-lock icon"></i>
+                    <button type="button" class="eye-toggle" id="togglePassword" aria-label="Toggle password visibility">
+                        <i class="fas fa-eye" id="eyeIcon"></i>
                     </button>
-                    <p class="mt-4 text-center text-sm">Already have an account? <a href="/login" class="text-blue-500 font-bold">Login</a></p>
-                </form>
-                <button id="switchMode"
-                    class="mt-4 w-full bg-gray-200 hover:bg-gray-300 text-black font-bold py-2 px-4 rounded-lg transition border border-gray-300">Switch
-                    Mode</button>
+                </div>
+                <div class="strength-bar">
+                    <div class="strength-fill" id="strengthFill"></div>
+                </div>
+            </div>
+            <button type="submit" id="signup-btn">
+                <i class="fas fa-rocket" style="margin-right:8px;"></i> Get Started Free
+            </button>
+        </form>
+
+        <p class="footer-link">Already have an account? <a href="/login">Sign in</a></p>
     </div>
 
     <script>
-        const switchModeButton = document.getElementById('switchMode');
-        const card = document.getElementById('card');
-        const eyeIcon = document.getElementById('eyeIcon');
-        const togglePassword = document.getElementById('togglePassword');
-        const passwordInput = document.getElementById('password');
+        // Particles
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 28; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.animationDuration = (7 + Math.random() * 13) + 's';
+            p.style.animationDelay = (Math.random() * 12) + 's';
+            const size = (2 + Math.random() * 4) + 'px';
+            p.style.width = p.style.height = size;
+            container.appendChild(p);
+        }
 
-        switchModeButton.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            document.body.classList.toggle('light-mode');
+        // Password toggle
+        const toggleBtn = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+        toggleBtn.addEventListener('click', () => {
+            const isPass = passwordInput.type === 'password';
+            passwordInput.type = isPass ? 'text' : 'password';
+            eyeIcon.className = isPass ? 'fas fa-eye-slash' : 'fas fa-eye';
         });
 
-        togglePassword.addEventListener('click', () => {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
+        // Password strength
+        const strengthFill = document.getElementById('strengthFill');
+        passwordInput.addEventListener('input', () => {
+            const v = passwordInput.value;
+            let s = 0;
+            if (v.length >= 6) s++;
+            if (v.length >= 10) s++;
+            if (/[A-Z]/.test(v)) s++;
+            if (/[0-9]/.test(v)) s++;
+            if (/[^A-Za-z0-9]/.test(v)) s++;
+            const widths = ['0%', '20%', '40%', '65%', '85%', '100%'];
+            const colors = ['#666', '#F72585', '#FF9500', '#FFD60A', '#34D399', '#00D4FF'];
+            strengthFill.style.width = widths[s];
+            strengthFill.style.background = colors[s];
         });
     </script>
 </body>
-
 </html>

@@ -3,113 +3,659 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lobby - EchoChat</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>Lobby – EchoChat</title>
+    <meta name="description" content="EchoChat Lobby – Browse and join chat rooms in real time.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --purple: #7C3AED;
+            --blue: #4F8EF7;
+            --cyan: #00D4FF;
+            --pink: #F72585;
+            --green: #10B981;
+            --dark: #0D0E21;
+            --surface: #13142E;
+            --surface2: #1A1B3D;
+            --glass: rgba(255,255,255,0.06);
+            --glass-border: rgba(255,255,255,0.1);
+            --text: #F0F0FF;
+            --muted: #7B7BAF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13, 14, 33, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        .navbar-brand img {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+        .navbar-brand-text {
+            font-size: 1.3rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--blue), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 99px;
+            padding: 6px 14px;
+        }
+        .user-avatar {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--purple), var(--blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .user-name { font-size: 0.85rem; font-weight: 500; color: var(--text); }
+
+        .btn-logout {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(247, 37, 133, 0.15);
+            border: 1px solid rgba(247, 37, 133, 0.3);
+            color: #ff6ba8;
+            padding: 7px 14px;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .btn-logout:hover {
+            background: rgba(247, 37, 133, 0.25);
+            transform: translateY(-1px);
+        }
+
+        /* ===== HERO STRIP ===== */
+        .hero-strip {
+            background: linear-gradient(135deg, #13142E 0%, #1A1B3D 100%);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 28px 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-strip::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url('/img/hero.png') center/cover no-repeat;
+            opacity: 0.07;
+        }
+        .hero-strip-content { position: relative; z-index: 1; }
+        .hero-strip h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--text), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-strip p {
+            color: var(--muted);
+            font-size: 0.88rem;
+            margin-top: 4px;
+        }
+        .hero-stats {
+            display: flex;
+            gap: 24px;
+            margin-top: 16px;
+        }
+        .stat {
+            display: flex;
+            flex-direction: column;
+        }
+        .stat-val {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--blue), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-label { font-size: 0.72rem; color: var(--muted); }
+
+        /* ===== MAIN LAYOUT ===== */
+        .main-layout {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 28px 20px 60px;
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 24px;
+        }
+        @media (max-width: 800px) {
+            .main-layout { grid-template-columns: 1fr; }
+        }
+
+        /* ===== SECTION HEADER ===== */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title i { color: var(--cyan); font-size: 0.9rem; }
+
+        /* Create Room Form */
+        .create-room-form {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+            max-width: 360px;
+        }
+        .create-room-form input {
+            flex: 1;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 9px 14px;
+            color: var(--text);
+            font-size: 0.87rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+        .create-room-form input::placeholder { color: var(--muted); }
+        .create-room-form input:focus {
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 3px rgba(0,212,255,0.15);
+        }
+        .btn-create {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, var(--purple), var(--blue));
+            border: none;
+            border-radius: 10px;
+            padding: 9px 16px;
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
+            white-space: nowrap;
+        }
+        .btn-create:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5);
+        }
+
+        /* Alert */
+        .alert-error {
+            background: rgba(247, 37, 133, 0.1);
+            border: 1px solid rgba(247, 37, 133, 0.25);
+            border-left: 3px solid var(--pink);
+            border-radius: 10px;
+            padding: 11px 15px;
+            color: #ff6ba8;
+            font-size: 0.85rem;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ===== ROOMS GRID ===== */
+        .rooms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        .room-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 20px;
+            transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+            position: relative;
+            overflow: hidden;
+        }
+        .room-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--purple), var(--blue), var(--cyan));
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+        .room-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.35); border-color: rgba(79,142,247,0.25); }
+        .room-card:hover::before { opacity: 1; }
+
+        .room-icon {
+            width: 42px; height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(124,58,237,0.25), rgba(79,142,247,0.25));
+            border: 1px solid rgba(79,142,247,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+        }
+        .room-name {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .room-meta {
+            color: var(--muted);
+            font-size: 0.78rem;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .room-meta i { font-size: 0.72rem; }
+        .member-dot {
+            display: inline-block;
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            margin-right: 2px;
+        }
+
+        /* Room action buttons */
+        .btn-enter-chat {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, var(--blue), var(--cyan));
+            color: var(--dark);
+            font-weight: 700;
+            font-size: 0.83rem;
+            padding: 8px 16px;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 16px rgba(0,212,255,0.3);
+        }
+        .btn-enter-chat:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,212,255,0.45); }
+
+        .btn-request-join {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: var(--text);
+            font-weight: 600;
+            font-size: 0.83rem;
+            padding: 8px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: background 0.2s, border-color 0.2s, transform 0.2s;
+        }
+        .btn-request-join:hover {
+            background: rgba(79,142,247,0.1);
+            border-color: rgba(79,142,247,0.35);
+            transform: translateY(-1px);
+            color: var(--blue);
+        }
+
+        .badge-pending {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,153,0,0.12);
+            border: 1px solid rgba(255,153,0,0.3);
+            color: #FFAA00;
+            font-weight: 600;
+            font-size: 0.78rem;
+            padding: 8px 14px;
+            border-radius: 10px;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            border: 2px dashed rgba(255,255,255,0.08);
+            border-radius: 18px;
+            color: var(--muted);
+        }
+        .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .empty-state p { font-size: 0.9rem; }
+
+        /* ===== ADMIN PANEL ===== */
+        .admin-panel {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 22px;
+            position: sticky;
+            top: 80px;
+        }
+        .admin-panel-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .admin-panel-title .shield {
+            width: 30px; height: 30px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(247,37,133,0.2), rgba(124,58,237,0.2));
+            border: 1px solid rgba(247,37,133,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+        }
+
+        .admin-room-group { margin-bottom: 18px; }
+        .admin-room-group:last-child { margin-bottom: 0; }
+        .admin-room-name {
+            font-size: 0.83rem;
+            font-weight: 700;
+            color: var(--blue);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .pending-badge {
+            background: rgba(79,142,247,0.15);
+            color: var(--blue);
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 99px;
+            border: 1px solid rgba(79,142,247,0.2);
+        }
+
+        .request-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            transition: background 0.2s;
+        }
+        .request-item:hover { background: rgba(255,255,255,0.06); }
+        .request-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .request-avatar {
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--pink), var(--purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 700;
+        }
+        .request-username { font-size: 0.83rem; font-weight: 500; }
+        .request-actions { display: flex; gap: 6px; }
+        .btn-approve, .btn-reject {
+            width: 30px; height: 30px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .btn-approve {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            color: #34D399;
+        }
+        .btn-approve:hover { background: rgba(16,185,129,0.28); transform: scale(1.1); }
+        .btn-reject {
+            background: rgba(247, 37, 133, 0.12);
+            border: 1px solid rgba(247, 37, 133, 0.25);
+            color: #ff6ba8;
+        }
+        .btn-reject:hover { background: rgba(247,37,133,0.25); transform: scale(1.1); }
+
+        .no-requests {
+            text-align: center;
+            padding: 28px 0;
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+        .no-requests i { font-size: 1.8rem; display: block; margin-bottom: 8px; opacity: 0.4; }
+
+        @keyframes slide-in {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in { animation: slide-in 0.3s ease-out forwards; }
+    </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
-    <nav class="bg-white p-4 shadow flex justify-between items-center sticky top-0 z-50">
-        <h1 class="text-xl font-bold text-blue-600">EchoChat Lobby</h1>
-        <div class="flex items-center">
-            <span class="mr-4 hidden md:inline text-sm">Logged in as: <strong><%= username %></strong></span>
-            <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm font-bold transition">Logout</a>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <a class="navbar-brand" href="/lobby">
+            <img src="/img/icon.png" alt="EchoChat">
+            <span class="navbar-brand-text">EchoChat</span>
+        </a>
+        <div class="navbar-right">
+            <div class="user-badge">
+                <div class="user-avatar"><%= username.charAt(0).toUpperCase() %></div>
+                <span class="user-name"><%= username %></span>
+            </div>
+            <a href="/logout" class="btn-logout">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="hidden-mobile">Logout</span>
+            </a>
         </div>
     </nav>
 
-    <div class="container mx-auto mt-4 lg:mt-8 flex flex-col lg:flex-row px-4 gap-4 lg:gap-8 pb-8">
-        <!-- Rooms Section -->
-        <div class="w-full lg:w-2/3">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-                <h2 class="text-2xl font-bold">Available Rooms</h2>
-                <!-- Create Room Form -->
-                <form action="/rooms/create" method="POST" class="flex w-full sm:w-auto gap-2">
-                    <input type="text" name="name" placeholder="New Room Name" required class="flex-1 border p-2 rounded focus:ring-2 focus:ring-blue-400 outline-none">
-                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow transition">Create</button>
+    <!-- HERO STRIP -->
+    <div class="hero-strip">
+        <div class="hero-strip-content">
+            <h1>🏠 Chat Lobby</h1>
+            <p>Browse rooms, join conversations, or create your own space</p>
+            <div class="hero-stats">
+                <div class="stat">
+                    <span class="stat-val"><%= rooms.length %></span>
+                    <span class="stat-label">Rooms</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-val"><%= rooms.reduce((a,r) => a + r.members.length, 0) %></span>
+                    <span class="stat-label">Members</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN LAYOUT -->
+    <div class="main-layout">
+
+        <!-- LEFT: Rooms -->
+        <div>
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-door-open"></i> Available Rooms
+                </div>
+                <form action="/rooms/create" method="POST" class="create-room-form">
+                    <input type="text" name="name" id="new-room-name" placeholder="New room name..." required>
+                    <button type="submit" class="btn-create" id="create-room-btn">
+                        <i class="fas fa-plus"></i> Create
+                    </button>
                 </form>
             </div>
 
             <% if (query && query.error) { %>
-                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-4 rounded" role="alert">
-                    <p class="text-sm"><%= query.error %></p>
-                </div>
+            <div class="alert-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                <%= query.error %>
+            </div>
             <% } %>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="roomsGrid">
+            <div class="rooms-grid" id="roomsGrid">
                 <% rooms.forEach(room => { %>
-                    <div class="bg-white p-4 rounded-xl shadow-sm hover:shadow-md border border-gray-100 transition" id="room-card-<%= room._id %>">
-                        <h3 class="font-bold text-lg text-gray-800">#<%= room.name %></h3>
-                        <p class="text-sm text-gray-500 mb-4">Admin: <%= room.admin.username %> • <%= room.members.length %> members</p>
-                        
-                        <div id="room-action-<%= room._id %>">
-                            <% if (room.isMember) { %>
-                                <a href="/rooms/<%= room._id %>/chat" class="w-full sm:w-auto text-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg inline-block transition">Enter Chat</a>
-                            <% } else if (room.isPending) { %>
-                                <span class="w-full sm:w-auto text-center text-yellow-600 bg-yellow-50 border border-yellow-200 px-4 py-2 rounded-lg inline-block">Pending Approval</span>
-                            <% } else { %>
-                                <button onclick="requestJoinSocket('<%= room._id %>')" class="w-full sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg transition border border-gray-200">Request Join</button>
-                            <% } %>
-                        </div>
+                <div class="room-card" id="room-card-<%= room._id %>">
+                    <div class="room-icon">💬</div>
+                    <div class="room-name"># <%= room.name %></div>
+                    <div class="room-meta">
+                        <i class="fas fa-crown" style="color:#FFD60A;"></i>
+                        <%= room.admin.username %>
+                        &nbsp;•&nbsp;
+                        <span class="member-dot"></span>
+                        <%= room.members.length %> member<%= room.members.length !== 1 ? 's' : '' %>
                     </div>
+                    <div id="room-action-<%= room._id %>">
+                        <% if (room.isMember) { %>
+                        <a href="/rooms/<%= room._id %>/chat" class="btn-enter-chat" id="enter-<%= room._id %>">
+                            <i class="fas fa-arrow-right"></i> Enter Chat
+                        </a>
+                        <% } else if (room.isPending) { %>
+                        <span class="badge-pending">
+                            <i class="fas fa-clock"></i> Pending Approval
+                        </span>
+                        <% } else { %>
+                        <button onclick="requestJoinSocket('<%= room._id %>')" class="btn-request-join" id="join-btn-<%= room._id %>">
+                            <i class="fas fa-hand-paper"></i> Request Join
+                        </button>
+                        <% } %>
+                    </div>
+                </div>
                 <% }) %>
             </div>
+
             <% if (rooms.length === 0) { %>
-                <div class="bg-white p-8 rounded-xl border border-dashed border-gray-300 text-center">
-                    <p class="text-gray-500">No rooms available. Create the first one!</p>
-                </div>
+            <div class="empty-state">
+                <div class="empty-icon">🌌</div>
+                <p>No rooms yet — be the first to create one!</p>
+            </div>
             <% } %>
         </div>
 
-        <!-- Admin Requests Section -->
-        <div class="w-full lg:w-1/3">
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 h-fit sticky top-20">
-                <h2 class="text-xl font-bold mb-4 border-b pb-2 text-gray-800 flex items-center">
-                    <span class="mr-2">🛡️</span> Admin Panel
-                </h2>
+        <!-- RIGHT: Admin Panel -->
+        <div>
+            <div class="admin-panel">
+                <div class="admin-panel-title">
+                    <div class="shield">🛡️</div>
+                    Admin Panel
+                </div>
                 <div id="adminPanelContent">
                     <% let hasRequests = false; %>
                     <% rooms.forEach(room => { %>
                         <% if (room.isAdmin && room.joinRequests.length > 0) { %>
                             <% hasRequests = true; %>
-                            <div class="mb-6 last:mb-0" id="admin-room-<%= room._id %>">
-                                <h4 class="font-bold text-blue-600 mb-2 flex justify-between items-center">
-                                    <span>#<%= room.name %></span>
-                                    <span class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full"><%= room.joinRequests.length %> pending</span>
-                                </h4>
-                                <ul class="space-y-2">
+                            <div class="admin-room-group animate-in" id="admin-room-<%= room._id %>">
+                                <div class="admin-room-name">
+                                    <span># <%= room.name %></span>
+                                    <span class="pending-badge" id="count-<%= room._id %>"><%= room.joinRequests.length %> pending</span>
+                                </div>
+                                <ul style="list-style:none;" id="req-list-<%= room._id %>">
                                     <% room.joinRequests.forEach(req => { %>
-                                        <li class="flex justify-between items-center bg-gray-50 p-2.5 rounded-lg border border-gray-100" id="request-<%= room._id %>-<%= req._id %>">
-                                            <span class="font-medium text-gray-700"><%= req.username %></span>
-                                            <div class="flex gap-2">
-                                                <button onclick="approveRequestSocket('<%= room._id %>', '<%= req._id %>')" class="bg-white hover:bg-green-50 text-green-600 border border-gray-200 hover:border-green-200 w-8 h-8 rounded-full flex items-center justify-center transition" title="Approve">✓</button>
-                                                <button onclick="rejectRequestSocket('<%= room._id %>', '<%= req._id %>')" class="bg-white hover:bg-red-50 text-red-600 border border-gray-200 hover:border-red-200 w-8 h-8 rounded-full flex items-center justify-center transition" title="Reject">×</button>
-                                            </div>
-                                        </li>
+                                    <li class="request-item" id="request-<%= room._id %>-<%= req._id %>">
+                                        <div class="request-user">
+                                            <div class="request-avatar"><%= req.username.charAt(0).toUpperCase() %></div>
+                                            <span class="request-username"><%= req.username %></span>
+                                        </div>
+                                        <div class="request-actions">
+                                            <button onclick="approveRequestSocket('<%= room._id %>', '<%= req._id %>')" class="btn-approve" title="Approve">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button onclick="rejectRequestSocket('<%= room._id %>', '<%= req._id %>')" class="btn-reject" title="Reject">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </li>
                                     <% }) %>
                                 </ul>
                             </div>
                         <% } %>
                     <% }) %>
-                    
                     <% if (!hasRequests) { %>
-                        <div id="noRequestsMsg" class="text-center py-8">
-                            <p class="text-gray-400 text-sm">No pending join requests.</p>
-                        </div>
+                    <div id="noRequestsMsg" class="no-requests">
+                        <i class="fas fa-inbox"></i>
+                        No pending join requests
+                    </div>
                     <% } %>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Socket.io Script -->
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         const userId = "<%= userId %>";
         const username = "<%= username %>";
 
-        // Register user for status and real-time events
         socket.emit('register-user-status', userId);
-
-        /* --- Client Emitters --- */
 
         function requestJoinSocket(roomId) {
             socket.emit('join-room-request', { roomId, userId, username });
@@ -123,17 +669,13 @@
             socket.emit('reject-join-request', { roomId, requestUserId });
         }
 
-        /* --- Client Listeners --- */
-
-        // User requested to join
         socket.on('join-request-sent', ({ roomId }) => {
             const container = document.getElementById(`room-action-${roomId}`);
             if (container) {
-                container.innerHTML = `<span class="w-full sm:w-auto text-center text-yellow-600 bg-yellow-50 border border-yellow-200 px-4 py-2 rounded-lg inline-block animate-pulse">Pending Approval</span>`;
+                container.innerHTML = `<span class="badge-pending"><i class="fas fa-clock"></i> Pending Approval</span>`;
             }
         });
 
-        // Admin receives a new request
         socket.on('join-request-received', ({ roomId, roomName, user }) => {
             let adminRoom = document.getElementById(`admin-room-${roomId}`);
             const noRequestsMsg = document.getElementById('noRequestsMsg');
@@ -143,44 +685,41 @@
                 const adminPanelContent = document.getElementById('adminPanelContent');
                 const roomDiv = document.createElement('div');
                 roomDiv.id = `admin-room-${roomId}`;
-                roomDiv.className = 'mb-6 last:mb-0';
+                roomDiv.className = 'admin-room-group animate-in';
                 roomDiv.innerHTML = `
-                    <h4 class="font-bold text-blue-600 mb-2 flex justify-between items-center">
-                        <span>#${roomName}</span>
-                        <span class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full" id="count-${roomId}">1 pending</span>
-                    </h4>
-                    <ul class="space-y-2" id="req-list-${roomId}"></ul>
+                    <div class="admin-room-name">
+                        <span># ${roomName}</span>
+                        <span class="pending-badge" id="count-${roomId}">1 pending</span>
+                    </div>
+                    <ul style="list-style:none;" id="req-list-${roomId}"></ul>
                 `;
                 adminPanelContent.appendChild(roomDiv);
                 adminRoom = roomDiv;
-            } else {
-                // Update count if exists (simplified implementation)
             }
 
             const list = document.getElementById(`req-list-${roomId}`) || adminRoom.querySelector('ul');
             if (!document.getElementById(`request-${roomId}-${user._id}`)) {
                 const li = document.createElement('li');
                 li.id = `request-${roomId}-${user._id}`;
-                li.className = 'flex justify-between items-center bg-gray-50 p-2.5 rounded-lg border border-gray-100 animate-slide-in';
+                li.className = 'request-item animate-in';
                 li.innerHTML = `
-                    <span class="font-medium text-gray-700">${user.username}</span>
-                    <div class="flex gap-2">
-                        <button onclick="approveRequestSocket('${roomId}', '${user._id}')" class="bg-white hover:bg-green-50 text-green-600 border border-gray-200 hover:border-green-200 w-8 h-8 rounded-full flex items-center justify-center transition" title="Approve">✓</button>
-                        <button onclick="rejectRequestSocket('${roomId}', '${user._id}')" class="bg-white hover:bg-red-50 text-red-600 border border-gray-200 hover:border-red-200 w-8 h-8 rounded-full flex items-center justify-center transition" title="Reject">×</button>
+                    <div class="request-user">
+                        <div class="request-avatar">${user.username.charAt(0).toUpperCase()}</div>
+                        <span class="request-username">${user.username}</span>
+                    </div>
+                    <div class="request-actions">
+                        <button onclick="approveRequestSocket('${roomId}', '${user._id}')" class="btn-approve" title="Approve"><i class="fas fa-check"></i></button>
+                        <button onclick="rejectRequestSocket('${roomId}', '${user._id}')" class="btn-reject" title="Reject"><i class="fas fa-times"></i></button>
                     </div>
                 `;
                 list.appendChild(li);
             }
         });
 
-        // User gets approved - INSTANT REDIRECT
-        socket.on('join-approved', ({ roomId, roomName }) => {
-            // Show a brief toast or alert then redirect
-            // For now, instant redirect as requested
+        socket.on('join-approved', ({ roomId }) => {
             window.location.href = `/rooms/${roomId}/chat`;
         });
 
-        // Admin success handlers
         socket.on('approval-success', ({ roomId, requestUserId }) => {
             removeRequestFromUI(roomId, requestUserId);
         });
@@ -192,37 +731,27 @@
         function removeRequestFromUI(roomId, requestUserId) {
             const reqEl = document.getElementById(`request-${roomId}-${requestUserId}`);
             if (reqEl) {
-                reqEl.remove();
-                // If no more requests in this room, remove the room group
-                const list = document.getElementById(`req-list-${roomId}`) || document.querySelector(`#admin-room-${roomId} ul`);
-                if (list && list.children.length === 0) {
-                    const roomGroup = document.getElementById(`admin-room-${roomId}`);
-                    if (roomGroup) roomGroup.remove();
-                    
-                    // If no more rooms at all, show empty message
-                    const adminPanelContent = document.getElementById('adminPanelContent');
-                    if (adminPanelContent.children.length === 0) {
-                        const noMsg = document.createElement('div');
-                        noMsg.id = 'noRequestsMsg';
-                        noMsg.className = 'text-center py-8';
-                        noMsg.innerHTML = '<p class="text-gray-400 text-sm">No pending join requests.</p>';
-                        adminPanelContent.appendChild(noMsg);
+                reqEl.style.opacity = '0';
+                reqEl.style.transform = 'translateX(20px)';
+                reqEl.style.transition = 'all 0.3s ease';
+                setTimeout(() => {
+                    reqEl.remove();
+                    const list = document.getElementById(`req-list-${roomId}`) || document.querySelector(`#admin-room-${roomId} ul`);
+                    if (list && list.children.length === 0) {
+                        const roomGroup = document.getElementById(`admin-room-${roomId}`);
+                        if (roomGroup) roomGroup.remove();
+                        const adminPanelContent = document.getElementById('adminPanelContent');
+                        if (adminPanelContent.children.length === 0) {
+                            const noMsg = document.createElement('div');
+                            noMsg.id = 'noRequestsMsg';
+                            noMsg.className = 'no-requests';
+                            noMsg.innerHTML = '<i class="fas fa-inbox"></i>No pending join requests';
+                            adminPanelContent.appendChild(noMsg);
+                        }
                     }
-                }
+                }, 300);
             }
         }
     </script>
-
-    <style>
-        @keyframes slide-in {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-slide-in {
-            animation: slide-in 0.3s ease-out forwards;
-        }
-    </style>
-</body>
-</html>
 </body>
 </html>
