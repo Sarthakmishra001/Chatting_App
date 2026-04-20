@@ -26,8 +26,22 @@
             --recv-bg: #1F2937;
             --shadow: 0 4px 12px rgba(0,0,0,0.5);
             --radius-card: 12px;
+            --radius-card: 12px;
             --radius-input: 24px;
             --radius-btn: 8px;
+        }
+
+        [data-theme="light"] {
+            --bg: #F3F4F6;
+            --surface: #FFFFFF;
+            --border-subtle: #E5E7EB;
+            --border-strong: #D1D5DB;
+            --text-primary: #111827;
+            --text-secondary: #4B5563;
+            --text-muted: #6B7280;
+            --sent-bg: rgba(59, 130, 246, 0.1);
+            --recv-bg: #FFFFFF;
+            --shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
 
         html, body {
@@ -545,8 +559,8 @@
             <!-- Call Dropdown -->
             <div id="callDropdown" class="call-menu">
                 <div class="call-menu-header">📹 Start a Video Call</div>
-                <div class="call-menu-item" style="font-weight:700; border-bottom:1px solid var(--glass-b);" onclick="callAllMembers()">
-                    <i class="fas fa-users" style="color:var(--cyan);"></i> Call All Members
+                <div class="call-menu-item" style="font-weight:700; border-bottom:1px solid var(--border-subtle);" onclick="callAllMembers()">
+                    <i class="fas fa-users" style="color:var(--accent);"></i> Call All Members
                 </div>
                 <div class="call-menu-header" style="margin-top:0;">Select Member</div>
                 <div class="call-member-list">
@@ -569,7 +583,7 @@
         <!-- SIDEBAR -->
         <div id="membersSidebar" class="members-sidebar">
             <div class="sidebar-header">
-                <div class="sidebar-title"><i class="fas fa-users" style="color:var(--cyan);margin-right:6px;"></i> Members</div>
+                <div class="sidebar-title"><i class="fas fa-users" style="color:var(--accent);margin-right:6px;"></i> Members</div>
             </div>
             <div class="sidebar-body">
                 <% room.members.forEach(member => { %>
@@ -738,7 +752,7 @@
         document.addEventListener('click', (e) => {
             const menu = document.getElementById('callDropdown');
             const btn = document.getElementById('videoCallBtn');
-            if (menu.classList.contains('active') && !menu.contains(e.target) && e.target !== btn) {
+            if (menu && btn && menu.classList.contains('active') && !menu.contains(e.target) && !btn.contains(e.target)) {
                 menu.classList.remove('active');
             }
         });
