@@ -1,0 +1,9 @@
+config:
+  target: "https://echochat-app-upsw.onrender.com/"
+  phases:
+    - duration: 60
+      arrivalRate: 10   # 10 users per second for 60 sec = ~600 requests
+scenarios:
+  - flow:
+      - get:
+          url: "/login"
